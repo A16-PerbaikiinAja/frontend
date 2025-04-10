@@ -2,17 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Wrench } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -42,10 +42,9 @@ export default function RegisterPage() {
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
       <Link
         href="/"
-        className="absolute left-4 top-4 md:left-8 md:top-8 flex items-center gap-2 font-bold"
+        className="w-32 md:w-48 absolute left-4 top-4 md:left-8 md:top-8"
       >
-        <Wrench className="h-5 w-5" />
-        <span>PerbaikiinAja</span>
+        <Image src="/logo.png" width={500} height={500} alt="Logo" />
       </Link>
       <Tabs defaultValue="user" className="w-full max-w-md">
         <TabsList className="grid w-full grid-cols-2">

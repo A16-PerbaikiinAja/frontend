@@ -1,15 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Shield, User, Wrench } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="max-md:px-4 sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center">
-          <Link href="/" className="flex items-center gap-2 font-bold">
-            <Wrench className="h-5 w-5" />
-            <span>PerbaikiinAja</span>
+          <Link href="/" className="w-32 md:w-48">
+            <Image src="/logo.png" width={500} height={500} alt="Logo" />
           </Link>
           <div className="ml-auto flex gap-2">
             <Link href="/login">
