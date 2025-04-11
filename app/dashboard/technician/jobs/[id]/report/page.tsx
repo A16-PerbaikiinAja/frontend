@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,16 +16,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 
-export default function CreateReport({ params }: { params: { id: string } }) {
+export default function CreateReport({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = React.use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for the job
   const job = {
-    id: params.id,
+    id: resolvedParams.id,
     item: "Tablet",
     issue: "Battery replacement",
     customer: "Mike Johnson",
