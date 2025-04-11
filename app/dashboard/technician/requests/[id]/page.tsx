@@ -1,7 +1,5 @@
 "use client";
 
-import type React from "react";
-
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,20 +22,21 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 
 export default function RepairRequestDetails({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const resolvedParams = React.use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for the repair request
   const request = {
-    id: params.id,
+    id: resolvedParams.id,
     item: "Laptop",
     issue: "Won't turn on",
     description:
