@@ -2,8 +2,6 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -24,8 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function RepairRequestDetails({
   params,
@@ -33,7 +33,6 @@ export default function RepairRequestDetails({
   params: { id: string };
 }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for the repair request
@@ -56,8 +55,7 @@ export default function RepairRequestDetails({
     // Simulate form submission
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Request accepted",
+      toast("Request accepted", {
         description:
           "You have accepted the repair request and provided an estimate",
       });
@@ -71,8 +69,7 @@ export default function RepairRequestDetails({
     // Simulate decline process
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Request declined",
+      toast("Request declined", {
         description: "You have declined the repair request",
       });
       router.push("/dashboard/technician/requests");

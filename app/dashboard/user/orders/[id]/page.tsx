@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,8 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -23,12 +20,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Star, ChevronLeft, AlertTriangle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { AlertTriangle, ChevronLeft, Star } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function OrderDetails({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
   const [rating, setRating] = useState(0);
@@ -71,8 +70,7 @@ export default function OrderDetails({ params }: { params: { id: string } }) {
     // Simulate cancellation process
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Order cancelled",
+      toast("Order cancelled", {
         description: "Your repair order has been cancelled",
       });
       router.push("/dashboard/user/orders");
@@ -86,8 +84,7 @@ export default function OrderDetails({ params }: { params: { id: string } }) {
     setTimeout(() => {
       setIsLoading(false);
       setShowReviewDialog(false);
-      toast({
-        title: "Review submitted",
+      toast("Review submitted", {
         description: "Your review has been submitted successfully",
       });
     }, 1500);

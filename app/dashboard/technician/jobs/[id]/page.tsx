@@ -2,9 +2,8 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -22,13 +20,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { ChevronLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function JobDetails({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for the job
@@ -51,8 +50,7 @@ export default function JobDetails({ params }: { params: { id: string } }) {
     // Simulate form submission
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Status updated",
+      toast("Status updated", {
         description: "The job status has been updated successfully",
       });
       router.push("/dashboard/technician/jobs");

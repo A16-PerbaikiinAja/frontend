@@ -2,8 +2,6 @@
 
 import type React from "react";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,16 +12,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ChevronLeft } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export default function CreateReport({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
   // Mock data for the job
@@ -41,8 +40,7 @@ export default function CreateReport({ params }: { params: { id: string } }) {
     // Simulate form submission
     setTimeout(() => {
       setIsLoading(false);
-      toast({
-        title: "Report submitted",
+      toast("Report submitted", {
         description: "Your repair report has been submitted successfully",
       });
       router.push("/dashboard/technician/jobs");
