@@ -23,10 +23,15 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, ChevronLeft, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import React, { useState } from "react";
 import { toast } from "sonner";
 
-export default function OrderDetails({ params }: { params: { id: string } }) {
+export default function OrderDetails({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const resolvedParams = React.use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [showReviewDialog, setShowReviewDialog] = useState(false);
@@ -34,7 +39,7 @@ export default function OrderDetails({ params }: { params: { id: string } }) {
 
   // Mock data for the order
   const order = {
-    id: params.id,
+    id: resolvedParams.id,
     item: "Laptop",
     issue: "Won't turn on",
     description:
@@ -170,7 +175,9 @@ export default function OrderDetails({ params }: { params: { id: string } }) {
                   <Button
                     variant="outline"
                     onClick={() =>
-                      router.push(`/dashboard/user/orders/${params.id}/edit`)
+                      router.push(
+                        `/dashboard/user/orders/${resolvedParams.id}/edit`,
+                      )
                     }
                     disabled={order.status !== "Pending"}
                   >

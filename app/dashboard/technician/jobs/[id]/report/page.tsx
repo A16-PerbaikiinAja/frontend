@@ -19,7 +19,11 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import { toast } from "sonner";
 
-export default function CreateReport({ params }: { params: Promise<{ id: string }> }) {
+export default function CreateReport({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const resolvedParams = React.use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
