@@ -19,6 +19,12 @@ jobs:
           node-version: 18
           cache: npm
 
+      - name: Prepare production env file
+        run: |
+          cat <<EOF > .env.production
+          NEXT_PUBLIC_AUTH_API_URL=${{ secrets.AUTH_API_URL }}
+          EOF
+
       - name: Install dependencies (for build)
         run: npm ci --legacy-peer-deps
 
@@ -27,12 +33,6 @@ jobs:
 
       - name: Install prod dependencies
         run: npm ci --omit=dev --ignore-scripts --legacy-peer-deps
-
-      - name: Prepare production env file
-        run: |
-          cat <<EOF > .env.production
-          NEXT_PUBLIC_AUTH_API_URL=${{ secrets.AUTH_API_URL }}
-          EOF
 
       - name: Copy build to EC2
         uses: appleboy/scp-action@v0.1.7
