@@ -19,7 +19,7 @@ jobs:
           node-version: 18
           cache: npm
 
-      - name: Install dependencies
+      - name: Install dependencies (for build)
         run: npm ci --legacy-peer-deps
 
       - name: Build Next.js
@@ -53,20 +53,23 @@ jobs:
           script: |
             cd /home/ubuntu/frontend
 
+            # ensure production environment
+            export NODE_ENV=production
+
             # install Node if not already
             if ! command -v node >/dev/null; then
               curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
               sudo apt-get install -y nodejs
             fi
 
-            # global PM2
+            # install or update PM2 globally
             if ! command -v pm2 >/dev/null; then
               sudo npm install -g pm2
             fi
 
-            # start or reload via PM2
-            pm2 describe frontend || pm2 start npm --name frontend -- start
-            pm2 reload frontend
+            # start or reload via PM2 with updated env
+            pm2 describe frontend || pm2 start npm --name frontend -- start --update-env
+            pm2 reload frontend --update-env
 
             # persist PM2 on reboot
             pm2 save
