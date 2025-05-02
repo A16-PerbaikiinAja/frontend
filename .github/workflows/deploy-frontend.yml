@@ -62,7 +62,7 @@ jobs:
             fi
 
             # install production deps
-            npm ci --production --legacy-peer-deps
+            npm ci --production --ignore-scripts --legacy-peer-deps
 
             # start or reload via PM2
             pm2 describe frontend || pm2 start npm --name frontend -- start
