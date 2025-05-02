@@ -73,4 +73,4 @@ jobs:
 
             # persist PM2 on reboot
             pm2 save
-            pm2 startup systemd -u ubuntu --hp /home/ubuntu
+            sudo pm2 startup systemd -u ubuntu --hp /home/ubuntu
