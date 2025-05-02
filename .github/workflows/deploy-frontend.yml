@@ -38,8 +38,8 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           source: |
-            .next/**
-            public/**
+            .next
+            public
             package.json
             package-lock.json
             .env.production
