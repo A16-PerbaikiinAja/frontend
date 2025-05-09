@@ -278,12 +278,11 @@ export default function ServiceOrderPage() {
                   <Input
                     id="serviceDate"
                     name="serviceDate"
-                    type="text"
+                    type="date"
                     value={formData.serviceDate}
                     onChange={handleInputChange}
                     onFocus={() => setFormFocused('serviceDate')}
                     onBlur={() => setFormFocused(null)}
-                    placeholder="Masukkan tanggal layanan"
                     className={`transition-all duration-200 ${
                       errors.serviceDate
                         ? 'border-destructive'
@@ -303,7 +302,7 @@ export default function ServiceOrderPage() {
                     </motion.p>
                   )}
                   <p className="text-muted-foreground mt-1 text-xs">
-                    Contoh: 15 Mei 2025 atau 15/05/2025
+                    Pilih tanggal yang Anda inginkan untuk layanan perbaikan
                   </p>
                 </div>
               </motion.div>
