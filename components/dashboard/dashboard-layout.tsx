@@ -102,8 +102,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         ? technicianNavItems
         : userNavItems;
 
-  console.log(user);
-
   const sidebarVariants = {
     expanded: {
       width: '240px',
