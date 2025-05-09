@@ -46,19 +46,19 @@ export default function ServiceOrderPage() {
     const newErrors: Partial<Record<string, string>> = {};
     
     if (!formData.itemName.trim()) 
-      newErrors.itemName = 'Nama barang tidak boleh kosong';
+      newErrors.itemName = 'Item name is required';
       
     if (!formData.itemCondition.trim()) 
-      newErrors.itemCondition = 'Kondisi barang harus dijelaskan';
+      newErrors.itemCondition = 'Item condition must be described';
       
     if (!formData.repairDetails.trim())
-      newErrors.repairDetails = 'Detail perbaikan tidak boleh kosong';
+      newErrors.repairDetails = 'Repair details are required';
       
     if (!formData.serviceDate.trim())
-      newErrors.serviceDate = 'Tanggal layanan harus dipilih';
+      newErrors.serviceDate = 'Service date must be selected';
       
     if (!formData.paymentMethodId)
-      newErrors.paymentMethodId = 'Pilih metode pembayaran';
+      newErrors.paymentMethodId = 'Payment method is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -68,7 +68,7 @@ export default function ServiceOrderPage() {
     e.preventDefault();
     
     if (!validateForm()) {
-      toast.error('Mohon isi semua field yang wajib diisi');
+      toast.error('Please fill in all required fields');
       return;
     }
     
@@ -76,7 +76,7 @@ export default function ServiceOrderPage() {
     
     setTimeout(() => {
       console.log('Form submitted:', formData);
-      toast.success('Order berhasil dibuat!');
+      toast.success('Order successfully created!');
       setIsSubmitting(false);
       
       setFormData({
@@ -125,7 +125,7 @@ export default function ServiceOrderPage() {
             href="/dashboard"
             className="text-primary hover:text-primary/90 flex items-center gap-2 transition-colors">
             <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Kembali ke Dashboard</span>
+            <span className="text-sm font-medium">Back to Dashboard</span>
           </Link>
         </motion.div>
 
@@ -134,8 +134,8 @@ export default function ServiceOrderPage() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
               <Wrench className="h-6 w-6 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Form Order Perbaikan</h1>
-            <p className="text-muted-foreground text-sm">Isi detail permintaan perbaikan Anda</p>
+            <h1 className="text-2xl font-bold tracking-tight">Service Order Form</h1>
+            <p className="text-muted-foreground text-sm">Fill in the details of your repair request</p>
           </motion.div>
 
           <motion.div className="rounded-lg border border-border bg-card p-6 shadow-sm" variants={itemVariants}>
@@ -148,7 +148,7 @@ export default function ServiceOrderPage() {
                     formFocused === 'itemName' ? 'text-primary' : ''
                   }`}>
                   <Settings className="h-3.5 w-3.5" />
-                  Nama Barang
+                  Item Name
                 </Label>
                 <div className="relative">
                   <Input
@@ -158,7 +158,7 @@ export default function ServiceOrderPage() {
                     onChange={handleInputChange}
                     onFocus={() => setFormFocused('itemName')}
                     onBlur={() => setFormFocused(null)}
-                    placeholder="Masukkan nama barang yang akan diperbaiki"
+                    placeholder="Enter the name of the item to be repaired"
                     className={`transition-all duration-200 ${
                       errors.itemName
                         ? 'border-destructive'
@@ -187,7 +187,7 @@ export default function ServiceOrderPage() {
                     formFocused === 'itemCondition' ? 'text-primary' : ''
                   }`}>
                   <Info className="h-3.5 w-3.5" />
-                  Kondisi Barang
+                  Item Condition
                 </Label>
                 <div className="relative">
                   <Textarea
@@ -198,7 +198,7 @@ export default function ServiceOrderPage() {
                     onFocus={() => setFormFocused('itemCondition')}
                     onBlur={() => setFormFocused(null)}
                     rows={3}
-                    placeholder="Deskripsikan kondisi barang saat ini secara detail"
+                    placeholder="Describe the current condition of the item in detail"
                     className={`transition-all duration-200 ${
                       errors.itemCondition
                         ? 'border-destructive'
@@ -218,7 +218,7 @@ export default function ServiceOrderPage() {
                     </motion.p>
                   )}
                   <p className="text-muted-foreground mt-1 text-xs">
-                    Jelaskan kerusakan atau masalah pada barang Anda
+                    Explain any damage or issues with your item
                   </p>
                 </div>
               </motion.div>
@@ -230,7 +230,7 @@ export default function ServiceOrderPage() {
                     formFocused === 'repairDetails' ? 'text-primary' : ''
                   }`}>
                   <FileText className="h-3.5 w-3.5" />
-                  Detail Perbaikan
+                  Repair Details
                 </Label>
                 <div className="relative">
                   <Textarea
@@ -241,7 +241,7 @@ export default function ServiceOrderPage() {
                     onFocus={() => setFormFocused('repairDetails')}
                     onBlur={() => setFormFocused(null)}
                     rows={4}
-                    placeholder="Jelaskan layanan perbaikan yang Anda inginkan"
+                    placeholder="Describe the repair service you need"
                     className={`transition-all duration-200 ${
                       errors.repairDetails
                         ? 'border-destructive'
@@ -261,11 +261,10 @@ export default function ServiceOrderPage() {
                     </motion.p>
                   )}
                   <p className="text-muted-foreground mt-1 text-xs">
-                    Sebutkan bagian apa yang perlu diperbaiki dan hasil yang diharapkan
+                    Specify what parts need to be repaired and your expected outcome
                   </p>
                 </div>
               </motion.div>
-
               <motion.div className="space-y-2" variants={itemVariants}>
                 <Label
                   htmlFor="serviceDate"
@@ -273,7 +272,7 @@ export default function ServiceOrderPage() {
                     formFocused === 'serviceDate' ? 'text-primary' : ''
                   }`}>
                   <Calendar className="h-3.5 w-3.5" />
-                  Tanggal Layanan
+                  Service Date
                 </Label>
                 <div className="relative">
                   <Input
@@ -303,7 +302,7 @@ export default function ServiceOrderPage() {
                     </motion.p>
                   )}
                   <p className="text-muted-foreground mt-1 text-xs">
-                    Pilih tanggal yang Anda inginkan untuk layanan perbaikan
+                    Enter your preferred service date
                   </p>
                 </div>
               </motion.div>
@@ -333,7 +332,7 @@ export default function ServiceOrderPage() {
                           ? 'border-primary ring-primary ring-1'
                           : ''
                       }`}>
-                      <SelectValue placeholder="Pilih metode pembayaran" />
+                      <SelectValue placeholder="Select your payment method" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="123e4567-e89b-12d3-a456-426614174001">Transfer Bank</SelectItem>
@@ -353,7 +352,7 @@ export default function ServiceOrderPage() {
                   )}
                 </div>
               </motion.div>
-
+              
               <motion.div className="space-y-2" variants={itemVariants}>
                 <Label
                   htmlFor="couponId"
@@ -361,7 +360,7 @@ export default function ServiceOrderPage() {
                     formFocused === 'couponId' ? 'text-primary' : ''
                   }`}>
                   <Percent className="h-3.5 w-3.5" />
-                  Kode Kupon
+                  Coupon Code
                 </Label>
                 <div className="relative">
                   <Input
@@ -371,7 +370,7 @@ export default function ServiceOrderPage() {
                     onChange={handleInputChange}
                     onFocus={() => setFormFocused('couponId')}
                     onBlur={() => setFormFocused(null)}
-                    placeholder="Masukkan kode kupon jika ada"
+                    placeholder="Enter coupon code if available"
                     className={`transition-all duration-200 ${
                       formFocused === 'couponId' ? 'border-primary ring-primary ring-1' : ''
                     }`}
@@ -386,10 +385,10 @@ export default function ServiceOrderPage() {
                     <label
                       htmlFor="terms"
                       className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                      Saya setuju dengan syarat dan ketentuan layanan
+                      I agree to the terms and conditions
                     </label>
                     <p className="text-muted-foreground text-xs">
-                      Dengan mencentang kotak ini, Anda menyetujui syarat dan ketentuan kami.
+                      By checking this box, you agree to our terms and conditions
                     </p>
                   </div>
                 </div>
@@ -403,11 +402,11 @@ export default function ServiceOrderPage() {
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Memproses...</span>
+                      <span>Processing...</span>
                     </span>
                   ) : (
                     <>
-                      <span>Kirim Order</span>
+                      <span>Order</span>
                       <motion.span
                         className="absolute inset-0 bg-white/10"
                         initial={{ x: '-100%' }}
