@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ServiceOrderPage() {
@@ -317,23 +318,30 @@ export default function ServiceOrderPage() {
                   Metode Pembayaran
                 </Label>
                 <div className="relative">
-                  <Input
-                    id="paymentMethodId"
-                    name="paymentMethodId"
+                  <Select
                     value={formData.paymentMethodId}
-                    onChange={handleInputChange}
-                    onFocus={() => setFormFocused('paymentMethodId')}
-                    onBlur={() => setFormFocused(null)}
-                    placeholder="Masukkan metode pembayaran"
-                    className={`transition-all duration-200 ${
-                      errors.paymentMethodId
-                        ? 'border-destructive'
-                        : formFocused === 'paymentMethodId'
-                        ? 'border-primary ring-primary ring-1'
-                        : ''
-                    }`}
-                    required
-                  />
+                    onValueChange={(value) => handleSelectChange('paymentMethodId', value)}
+                    onOpenChange={(open) => {
+                      if (open) setFormFocused('paymentMethodId');
+                      else setFormFocused(null);
+                    }}>
+                    <SelectTrigger
+                      className={`w-full transition-all duration-200 ${
+                        errors.paymentMethodId
+                          ? 'border-destructive'
+                          : formFocused === 'paymentMethodId'
+                          ? 'border-primary ring-primary ring-1'
+                          : ''
+                      }`}>
+                      <SelectValue placeholder="Pilih metode pembayaran" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="123e4567-e89b-12d3-a456-426614174001">Transfer Bank</SelectItem>
+                      <SelectItem value="123e4567-e89b-12d3-a456-426614174002">Kartu Kredit/Debit</SelectItem>
+                      <SelectItem value="123e4567-e89b-12d3-a456-426614174003">E-Wallet</SelectItem>
+                      <SelectItem value="123e4567-e89b-12d3-a456-426614174004">Bayar di Tempat</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {errors.paymentMethodId && (
                     <motion.p
                       className="text-destructive mt-1 text-sm"
@@ -343,9 +351,6 @@ export default function ServiceOrderPage() {
                       {errors.paymentMethodId}
                     </motion.p>
                   )}
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Contoh: Transfer Bank, Kartu Kredit, E-Wallet, Bayar di Tempat
-                  </p>
                 </div>
               </motion.div>
 
