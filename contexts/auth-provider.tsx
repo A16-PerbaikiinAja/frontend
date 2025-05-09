@@ -17,7 +17,7 @@ export type AuthContextType = {
     phoneNumber: string;
     address: string;
   }) => Promise<void>;
-  logout: () => Promise<void>;
+  logout: () => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,16 +35,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     (async () => {
       setIsLoading(true);
-      try {
-        const res = await fetch(`${API_URL}/profile`, { credentials: 'include' });
-        if (!res.ok) throw new Error();
-        const profile: User = await res.json();
-        setUser(profile);
-      } catch {
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const res = await fetch(`${API_URL}/profile`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (!res.ok) throw new Error('Invalid token');
+          const profile: User = await res.json();
+          setUser(profile);
+        } catch {
+          localStorage.removeItem('token');
+          setUser(null);
+        }
       }
+      setIsLoading(false);
     })();
   }, []);
 
@@ -53,18 +60,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      if (!res.ok) {
-        const errors = await res.json();
-        throw errors;
-      }
-      const pr = await fetch(`${API_URL}/profile`, { credentials: 'include' });
+      const body = await res.json();
+      if (!res.ok) throw body;
+
+      const { token } = body as { token: string; type: string; expiresIn: number };
+
+      localStorage.setItem('token', token);
+
+      const pr = await fetch(`${API_URL}/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!pr.ok) throw new Error('Failed to fetch profile');
       const profile: User = await pr.json();
       setUser(profile);
+
       router.push('/dashboard');
     } catch (err) {
       setUser(null);
@@ -90,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       const body = await res.json();
       if (!res.ok) throw body;
+
       await login(data.email, data.password);
     } catch (err) {
       throw err;
@@ -98,8 +111,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    await fetch(`${API_URL}/auth/logout`, { method: 'POST', credentials: 'include' });
+  const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
     router.push('/login');
   };
