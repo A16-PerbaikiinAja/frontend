@@ -25,7 +25,6 @@ import { useEffect, useState } from 'react';
 
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -50,7 +49,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [notifications, setNotifications] = useState(3);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -290,37 +288,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {isMobile && <div className="w-8" />}
 
           <div className="ml-auto flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            {user?.role === 'USER' && (
+              <Link href="/dashboard/notifications">
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell className="h-5 w-5" />
-                  {notifications > 0 && (
-                    <Badge
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs">
-                      {notifications}
-                    </Badge>
-                  )}
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <div className="max-h-80 overflow-auto">
-                  {[...Array(notifications)].map((_, i) => (
-                    <DropdownMenuItem key={i} className="flex flex-col items-start p-4">
-                      <div className="flex w-full justify-between">
-                        <span className="font-medium">New repair request</span>
-                        <span className="text-muted-foreground text-xs">2h ago</span>
-                      </div>
-                      <span className="text-muted-foreground text-sm">
-                        A new repair request has been submitted for your review.
-                      </span>
-                    </DropdownMenuItem>
-                  ))}
-                </div>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </Link>
+            )}
 
             <ThemeToggle />
 
