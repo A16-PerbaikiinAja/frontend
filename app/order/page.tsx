@@ -1,11 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Calendar, Loader2, Percent, Settings, Wrench, CreditCard, Info, FileText } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function ServiceOrderPage() {
   const [formData, setFormData] = useState({
-    customerId: '',
     itemName: '',
     itemCondition: '',
     repairDetails: '',
@@ -13,8 +21,12 @@ export default function ServiceOrderPage() {
     paymentMethodId: '',
     couponId: '',
   });
+  
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+  const [formFocused, setFormFocused] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -22,170 +34,390 @@ export default function ServiceOrderPage() {
     });
   };
 
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const validateForm = () => {
+    const newErrors: Partial<Record<string, string>> = {};
+    
+    if (!formData.itemName.trim()) 
+      newErrors.itemName = 'Nama barang tidak boleh kosong';
+      
+    if (!formData.itemCondition.trim()) 
+      newErrors.itemCondition = 'Kondisi barang harus dijelaskan';
+      
+    if (!formData.repairDetails.trim())
+      newErrors.repairDetails = 'Detail perbaikan tidak boleh kosong';
+      
+    if (!formData.serviceDate.trim())
+      newErrors.serviceDate = 'Tanggal layanan harus dipilih';
+      
+    if (!formData.paymentMethodId)
+      newErrors.paymentMethodId = 'Pilih metode pembayaran';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    alert('Form berhasil disubmit! Lihat console untuk detail data.');
+    
+    if (!validateForm()) {
+      toast.error('Mohon isi semua field yang wajib diisi');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
+    setTimeout(() => {
+      console.log('Form submitted:', formData);
+      toast.success('Order berhasil dibuat!');
+      setIsSubmitting(false);
+      
+      setFormData({
+        itemName: '',
+        itemCondition: '',
+        repairDetails: '',
+        serviceDate: '',
+        paymentMethodId: '',
+        couponId: '',
+      });
+    }, 1500);
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: { duration: 0.5 },
+    },
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Form Order Perbaikan Jasa</h1>
-        <Link 
-          href="/dashboard" 
-          className="text-blue-600 hover:text-blue-800 font-medium"
-        >
-          Kembali ke Dashboard
-        </Link>
-      </div>
-      
-      <div className="bg-white p-6 rounded-lg shadow-md">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="mb-4">
-            <label htmlFor="itemName" className="block text-sm font-medium text-gray-700 mb-1">
-              Nama Barang
-            </label>
-            <input
-              type="text"
-              id="itemName"
-              name="itemName"
-              value={formData.itemName}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Masukkan nama barang yang akan diperbaiki"
-              required
-            />
-          </div>
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+      <motion.div
+        className="w-full max-w-2xl px-4 py-8 md:px-6"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}>
+        
+        <motion.div
+          className="mb-8 flex items-center"
+          variants={itemVariants}>
+          <Link
+            href="/dashboard"
+            className="text-primary hover:text-primary/90 flex items-center gap-2 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Kembali ke Dashboard</span>
+          </Link>
+        </motion.div>
 
-          <div className="mb-4">
-            <label htmlFor="itemCondition" className="block text-sm font-medium text-gray-700 mb-1">
-              Kondisi Barang
-            </label>
-            <textarea
-              id="itemCondition"
-              name="itemCondition"
-              value={formData.itemCondition}
-              onChange={handleChange}
-              rows={3}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Deskripsikan kondisi barang saat ini secara detail"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">Jelaskan kerusakan atau masalah pada barang Anda</p>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="repairDetails" className="block text-sm font-medium text-gray-700 mb-1">
-              Detail Perbaikan
-            </label>
-            <textarea
-              id="repairDetails"
-              name="repairDetails"
-              value={formData.repairDetails}
-              onChange={handleChange}
-              rows={4}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Jelaskan layanan perbaikan yang Anda inginkan"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">Sebutkan bagian apa yang perlu diperbaiki dan hasil yang diharapkan</p>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="serviceDate" className="block text-sm font-medium text-gray-700 mb-1">
-              Tanggal Layanan
-            </label>
-            <input
-              type="date"
-              id="serviceDate"
-              name="serviceDate"
-              value={formData.serviceDate}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">Pilih tanggal yang Anda inginkan untuk layanan perbaikan</p>
-          </div>
-
-          <div className="mb-4">
-            <label htmlFor="paymentMethodId" className="block text-sm font-medium text-gray-700 mb-1">
-              Metode Pembayaran
-            </label>
-            <select
-              id="paymentMethodId"
-              name="paymentMethodId"
-              value={formData.paymentMethodId}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">Pilih Metode Pembayaran</option>
-              <option value="123e4567-e89b-12d3-a456-426614174001">Transfer Bank</option>
-              <option value="123e4567-e89b-12d3-a456-426614174002">Kartu Kredit/Debit</option>
-              <option value="123e4567-e89b-12d3-a456-426614174003">E-Wallet</option>
-              <option value="123e4567-e89b-12d3-a456-426614174004">Bayar di Tempat</option>
-            </select>
-          </div>
-
-          <div className="mb-6">
-            <label htmlFor="couponId" className="block text-sm font-medium text-gray-700 mb-1">
-              Kode Kupon (Opsional)
-            </label>
-            <input
-              type="text"
-              id="couponId"
-              name="couponId"
-              value={formData.couponId}
-              onChange={handleChange}
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Masukkan kode kupon jika ada"
-            />
-          </div>
-
-          <div className="mb-6">
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
-                <input
-                  id="terms"
-                  type="checkbox"
-                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  required
-                />
-              </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="terms" className="font-medium text-gray-700">
-                  Saya setuju dengan syarat dan ketentuan layanan
-                </label>
-                <p className="text-gray-500">Dengan mencentang kotak ini, Anda menyetujui syarat dan ketentuan kami.</p>
-              </div>
+        <motion.div className="space-y-8" variants={containerVariants}>
+          <motion.div className="space-y-2 text-center" variants={itemVariants}>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+              <Wrench className="h-6 w-6 text-primary" />
             </div>
-          </div>
+            <h1 className="text-2xl font-bold tracking-tight">Form Order Perbaikan</h1>
+            <p className="text-muted-foreground text-sm">Isi detail permintaan perbaikan Anda</p>
+          </motion.div>
 
-          <div className="flex items-center justify-end space-x-4">
-            <button
-              type="button"
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-              onClick={() => setFormData({
-                customerId: '',
-                itemName: '',
-                itemCondition: '',
-                repairDetails: '',
-                serviceDate: '',
-                paymentMethodId: '',
-                couponId: '',
-              })}
-            >
-              Reset
-            </button>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Kirim Order
-            </button>
-          </div>
-        </form>
-      </div>
+          <motion.div className="rounded-lg border border-border bg-card p-6 shadow-sm" variants={itemVariants}>
+            <motion.form onSubmit={handleSubmit} className="space-y-6" variants={containerVariants}>
+
+              <motion.div className="space-y-2" variants={itemVariants}>
+                <Label
+                  htmlFor="itemName"
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    formFocused === 'itemName' ? 'text-primary' : ''
+                  }`}>
+                  <Settings className="h-3.5 w-3.5" />
+                  Nama Barang
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="itemName"
+                    name="itemName"
+                    value={formData.itemName}
+                    onChange={handleInputChange}
+                    onFocus={() => setFormFocused('itemName')}
+                    onBlur={() => setFormFocused(null)}
+                    placeholder="Masukkan nama barang yang akan diperbaiki"
+                    className={`transition-all duration-200 ${
+                      errors.itemName
+                        ? 'border-destructive'
+                        : formFocused === 'itemName'
+                        ? 'border-primary ring-primary ring-1'
+                        : ''
+                    }`}
+                    required
+                  />
+                  {errors.itemName && (
+                    <motion.p
+                      className="text-destructive mt-1 text-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      {errors.itemName}
+                    </motion.p>
+                  )}
+                </div>
+              </motion.div>
+
+              <motion.div className="space-y-2" variants={itemVariants}>
+                <Label
+                  htmlFor="itemCondition"
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    formFocused === 'itemCondition' ? 'text-primary' : ''
+                  }`}>
+                  <Info className="h-3.5 w-3.5" />
+                  Kondisi Barang
+                </Label>
+                <div className="relative">
+                  <Textarea
+                    id="itemCondition"
+                    name="itemCondition"
+                    value={formData.itemCondition}
+                    onChange={handleInputChange}
+                    onFocus={() => setFormFocused('itemCondition')}
+                    onBlur={() => setFormFocused(null)}
+                    rows={3}
+                    placeholder="Deskripsikan kondisi barang saat ini secara detail"
+                    className={`transition-all duration-200 ${
+                      errors.itemCondition
+                        ? 'border-destructive'
+                        : formFocused === 'itemCondition'
+                        ? 'border-primary ring-primary ring-1'
+                        : ''
+                    }`}
+                    required
+                  />
+                  {errors.itemCondition && (
+                    <motion.p
+                      className="text-destructive mt-1 text-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      {errors.itemCondition}
+                    </motion.p>
+                  )}
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Jelaskan kerusakan atau masalah pada barang Anda
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div className="space-y-2" variants={itemVariants}>
+                <Label
+                  htmlFor="repairDetails"
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    formFocused === 'repairDetails' ? 'text-primary' : ''
+                  }`}>
+                  <FileText className="h-3.5 w-3.5" />
+                  Detail Perbaikan
+                </Label>
+                <div className="relative">
+                  <Textarea
+                    id="repairDetails"
+                    name="repairDetails"
+                    value={formData.repairDetails}
+                    onChange={handleInputChange}
+                    onFocus={() => setFormFocused('repairDetails')}
+                    onBlur={() => setFormFocused(null)}
+                    rows={4}
+                    placeholder="Jelaskan layanan perbaikan yang Anda inginkan"
+                    className={`transition-all duration-200 ${
+                      errors.repairDetails
+                        ? 'border-destructive'
+                        : formFocused === 'repairDetails'
+                        ? 'border-primary ring-primary ring-1'
+                        : ''
+                    }`}
+                    required
+                  />
+                  {errors.repairDetails && (
+                    <motion.p
+                      className="text-destructive mt-1 text-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      {errors.repairDetails}
+                    </motion.p>
+                  )}
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Sebutkan bagian apa yang perlu diperbaiki dan hasil yang diharapkan
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div className="space-y-2" variants={itemVariants}>
+                <Label
+                  htmlFor="serviceDate"
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    formFocused === 'serviceDate' ? 'text-primary' : ''
+                  }`}>
+                  <Calendar className="h-3.5 w-3.5" />
+                  Tanggal Layanan
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="serviceDate"
+                    name="serviceDate"
+                    type="text"
+                    value={formData.serviceDate}
+                    onChange={handleInputChange}
+                    onFocus={() => setFormFocused('serviceDate')}
+                    onBlur={() => setFormFocused(null)}
+                    placeholder="Masukkan tanggal layanan"
+                    className={`transition-all duration-200 ${
+                      errors.serviceDate
+                        ? 'border-destructive'
+                        : formFocused === 'serviceDate'
+                        ? 'border-primary ring-primary ring-1'
+                        : ''
+                    }`}
+                    required
+                  />
+                  {errors.serviceDate && (
+                    <motion.p
+                      className="text-destructive mt-1 text-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      {errors.serviceDate}
+                    </motion.p>
+                  )}
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Contoh: 15 Mei 2025 atau 15/05/2025
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div className="space-y-2" variants={itemVariants}>
+                <Label
+                  htmlFor="paymentMethodId"
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    formFocused === 'paymentMethodId' ? 'text-primary' : ''
+                  }`}>
+                  <CreditCard className="h-3.5 w-3.5" />
+                  Metode Pembayaran
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="paymentMethodId"
+                    name="paymentMethodId"
+                    value={formData.paymentMethodId}
+                    onChange={handleInputChange}
+                    onFocus={() => setFormFocused('paymentMethodId')}
+                    onBlur={() => setFormFocused(null)}
+                    placeholder="Masukkan metode pembayaran"
+                    className={`transition-all duration-200 ${
+                      errors.paymentMethodId
+                        ? 'border-destructive'
+                        : formFocused === 'paymentMethodId'
+                        ? 'border-primary ring-primary ring-1'
+                        : ''
+                    }`}
+                    required
+                  />
+                  {errors.paymentMethodId && (
+                    <motion.p
+                      className="text-destructive mt-1 text-sm"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}>
+                      {errors.paymentMethodId}
+                    </motion.p>
+                  )}
+                  <p className="text-muted-foreground mt-1 text-xs">
+                    Contoh: Transfer Bank, Kartu Kredit, E-Wallet, Bayar di Tempat
+                  </p>
+                </div>
+              </motion.div>
+
+              <motion.div className="space-y-2" variants={itemVariants}>
+                <Label
+                  htmlFor="couponId"
+                  className={`flex items-center gap-2 text-sm transition-colors duration-200 ${
+                    formFocused === 'couponId' ? 'text-primary' : ''
+                  }`}>
+                  <Percent className="h-3.5 w-3.5" />
+                  Kode Kupon
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="couponId"
+                    name="couponId"
+                    value={formData.couponId}
+                    onChange={handleInputChange}
+                    onFocus={() => setFormFocused('couponId')}
+                    onBlur={() => setFormFocused(null)}
+                    placeholder="Masukkan kode kupon jika ada"
+                    className={`transition-all duration-200 ${
+                      formFocused === 'couponId' ? 'border-primary ring-primary ring-1' : ''
+                    }`}
+                  />
+                </div>
+              </motion.div>
+
+              <motion.div className="pt-2" variants={itemVariants}>
+                <div className="flex items-start space-x-3">
+                  <Checkbox id="terms" required />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="terms"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Saya setuju dengan syarat dan ketentuan layanan
+                    </label>
+                    <p className="text-muted-foreground text-xs">
+                      Dengan mencentang kotak ini, Anda menyetujui syarat dan ketentuan kami.
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              <motion.div variants={itemVariants}>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="group relative w-full overflow-hidden">
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span>Memproses...</span>
+                    </span>
+                  ) : (
+                    <>
+                      <span>Kirim Order</span>
+                      <motion.span
+                        className="absolute inset-0 bg-white/10"
+                        initial={{ x: '-100%' }}
+                        whileHover={{ x: '100%' }}
+                        transition={{ duration: 0.5 }}
+                      />
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            </motion.form>
+          </motion.div>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }
