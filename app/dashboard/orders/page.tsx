@@ -161,7 +161,7 @@ export default function OrdersPage() {
                           <Button
                             variant='ghost'
                             size='icon'
-                            onClick={() => router.push(`/orders/${order.id}/edit`)}
+                            onClick={() => router.push(`/dashboard/orders/${order.id}/edit`)}
                             aria-label='Edit order'
                           >
                             <Edit2 className='h-4 w-4' />
