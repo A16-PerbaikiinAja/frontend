@@ -1,0 +1,239 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardFooter, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Star, ArrowLeft, PlusCircle, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { useAuth } from '@/contexts/auth-provider';
+import { useRouter } from 'next/navigation';
+
+interface Review {
+  id: string;
+  userId: string;
+  technicianId: string;
+  technicianFullName: string | null;
+  comment: string;
+  rating: number;
+  createdAt: string;
+}
+
+const ReviewsPage: React.FC = () => {
+  const router = useRouter();
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const { user } = useAuth?.() || { user: null };
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const [editingIds, setEditingIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (user) setCurrentUserId(user.id);
+    else setCurrentUserId(localStorage.getItem('userId'));
+    fetchReviews();
+  }, [user]);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review`;
+      const response = await fetch(reviewApiUrl);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data: Review[] = await response.json();
+      setReviews(data);
+    } catch (err: any) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch reviews');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this review?')) return;
+    setDeletingIds((prev) => [...prev, id]);
+    
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review/${id}`;
+      
+      const res = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+
+      if (!res.ok) throw new Error('Failed deleting review');
+      
+      setReviews((prev) => prev.filter((review) => review.id !== id));
+      toast.success('Review deleted!');
+    } catch (err: any) {
+      toast.error('Failed deleting revie');
+    } finally {
+      setDeletingIds((prev) => prev.filter((delId) => delId !== id));
+    }
+  };
+
+  const goToEdit = (id: string) => {
+    router.push(`/dashboard/reviews/edit/${id}`);
+  };
+
+  const renderStars = (rating: number) => (
+    <div className="flex">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`w-4 h-4 mr-1 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}`}
+          fill={i < rating ? '#FACC15' : '#E5E7EB'}
+        />
+      ))}
+    </div>
+  );
+
+  const getRatingBadgeColor = (rating: number) => {
+    if (rating >= 4) return 'bg-green-100 text-green-800';
+    if (rating >= 3) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-red-100 text-red-800';
+  };
+
+  if (loading) return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-center items-center min-h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading Reviews...</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="container mx-auto px-4 py-8">
+    <div className="flex justify-center items-center min-h-screen">
+      <div className="text-center">
+        <div className="text-red-500 text-xl mb-4">❌</div>
+        <p className="text-red-600 font-medium">Loading Reviews Failed!</p>
+        <button onClick={fetchReviews} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md">Try Again</button>
+      </div>
+    </div>
+  </div>
+  );
+
+  return (
+    <div className="container mx-auto p-4 mt-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="text-primary hover:text-primary/90 mr-4 flex items-center gap-2 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight">Reviews</h1>
+        </div>
+        <Button asChild className="ml-auto">
+          <Link href="/dashboard/reviews/create">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            <span>New Review</span>
+          </Link>
+        </Button>
+      </div>
+      {reviews.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-6xl mb-4">📝</div>
+          <h3 className="text-xl font-medium text-gray-900 mb-2">There's no reviews yet</h3>
+        </div>
+      ) : (
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mt-6">
+          {reviews.map((review) => (
+            <Card key={review.id} className="hover:shadow-lg transition-shadow group">
+              <CardHeader>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xl font-mono">
+                    <strong>{review.technicianFullName}</strong>
+                  </span>
+                  <Badge className={getRatingBadgeColor(review.rating)}>
+                    {review.rating} / 5
+                  </Badge>
+                </div>
+                <CardDescription>
+                  {review.createdAt
+                    ? new Date(review.createdAt).toLocaleDateString("id-ID", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : ""}
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                <div className="flex items-center space-x-2 mb-2">
+                  {renderStars(review.rating)}
+                </div>
+                <blockquote className="text-gray-700 italic mb-2">
+                  {review.comment}
+                </blockquote>
+              </CardContent>
+
+              <div className="border-t border-gray-200 mx-4 my-2" />
+
+              <CardFooter className="flex justify-between">
+              {(currentUserId ?? user?.id) === review.userId ? (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => goToEdit(review.id)}
+                    disabled={editingIds.includes(review.id) || deletingIds.includes(review.id)}
+                  >
+                    {editingIds.includes(review.id) ? "Updating..." : "Edit"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => handleDelete(review.id)}
+                    disabled={deletingIds.includes(review.id)}
+                    aria-label="Delete review"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {deletingIds.includes(review.id) ? "Deleting..." : "Delete"}
+                  </Button>
+                </>
+              ) : user?.role === "ADMIN" ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => handleDelete(review.id)}
+                  disabled={deletingIds.includes(review.id)}
+                  aria-label="Delete review"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  {deletingIds.includes(review.id) ? "Removing..." : "Remove"}
+                </Button>
+              ) : (
+                <span />
+              )}
+            </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {reviews.length > 0 && (
+        <div className="mt-8 text-center text-gray-600">Showing {reviews.length} reviews</div>
+      )}
+    </div>
+  );
+};
+
+export default ReviewsPage;
