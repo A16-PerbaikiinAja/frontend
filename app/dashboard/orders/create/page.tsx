@@ -14,7 +14,7 @@ import {
   User
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -43,32 +43,55 @@ export default function ServiceOrderPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
-  const technicians = [
-    {
-      id: '123e4567-e89b-12d3-a456-426614174001',
-      name: 'David Johnson',
-      specialty: 'Electronics',
-      rating: 4.8,
-      reviews: 58,
-      imageUrl: 'https://randomuser.me/api/portraits/men/32.jpg'
-    },
-    {
-      id: '123e4567-e89b-12d3-a456-426614174002',
-      name: 'Sarah Williams',
-      specialty: 'Computers',
-      rating: 4.9,
-      reviews: 72,
-      imageUrl: 'https://randomuser.me/api/portraits/women/44.jpg'
-    },
-    {
-      id: '123e4567-e89b-12d3-a456-426614174003',
-      name: 'Michael Rodriguez',
-      specialty: 'Home Appliances',
-      rating: 4.7,
-      reviews: 43,
-      imageUrl: 'https://randomuser.me/api/portraits/men/67.jpg'
-    },
-  ];
+  interface Technician {
+  id: string;
+  name: string;
+  imageUrl: string;
+  specialty: string;
+  rating: number;
+  reviews: number;
+}
+
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
+
+  useEffect(() => {
+  const fetchTechnicians = async () => {
+    try {
+      const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings`;
+      console.log('Review API URL:', reviewApiUrl);
+      
+      const response = await fetch(reviewApiUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch technicians.`);
+      }
+
+      const techniciansData = await response.json();
+      console.log('Technicians Data:', techniciansData);
+
+      if (!Array.isArray(techniciansData)) {
+        throw new Error('Technicians data is not an array');
+      }
+
+      const formattedTechnicians = techniciansData.map((technician: any) => ({
+        id: technician.technicianId,
+        name: technician.fullName,
+        specialty: technician.specialization || 'General Technician',
+        rating: technician.averageRating || 0,
+        reviews: technician.totalReviews || 0,
+        imageUrl: technician.profilePhoto || 'https://ui-avatars.com/api/?name=${encodeURIComponent(technician.fullName)}&background=random',
+      }));
+
+      setTechnicians(formattedTechnicians);
+    } catch (error) {
+      console.error('Error fetching technicians:', error);
+      toast.error('Failed to load technicians. Please try again later.');
+    }
+  };
+
+  fetchTechnicians();
+  }, []);
+
 
   const paymentMethods = [
     { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Transfer Bank' },
@@ -473,7 +496,6 @@ export default function ServiceOrderPage() {
                         </motion.p>
                       )}
                     </div>
-                    
                     <div className="grid gap-4">
                       {technicians.map((technician) => (
                         <motion.div
