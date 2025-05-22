@@ -190,7 +190,7 @@ export default function OrdersPage() {
                       <Button
                         variant='outline'
                         size='sm'
-                        onClick={() => router.push(`/orders/${order.id}`)}
+                        onClick={() => router.push(`/dashboard/orders/${order.id}`)}
                       >
                         View Details
                       </Button>
