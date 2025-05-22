@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, RefreshCw, ShoppingCart } from 'lucide-react';
+import { AlertCircle, RefreshCw, Edit2, ShoppingCart } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -22,10 +22,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/auth-provider';
 
 interface Order {
-  id: number;
-  serviceDate: string;
+  id: string;
+  technicianId?: string | null;
   itemName: string;
-  status: string;
+  itemCondition: string;
+  repairDetails: string;
+  serviceDate: string;
+  status: 'PENDING' | 'WAITING_APPROVAL' | string;
   finalPrice?: number | null;
 }
 
@@ -61,18 +64,15 @@ export default function OrdersPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-
-      if (!res.ok) {
-        throw new Error(`Status ${res.status}`);
-      }
-
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders`,
+        { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }
+      );
+      if (!res.ok) throw new Error(`Status ${res.status}`);
       const data = (await res.json()) as OrderListResponse;
       setOrders(data.orders);
     } catch (err) {
-      console.error('Failed to fetch orders:', err);
+      console.error(err);
       setError('Failed to load orders. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -97,8 +97,8 @@ export default function OrdersPage() {
       </div>
       {isLoading ? (
         <div className='space-y-4 px-6'>
-          {[...Array(4)].map((_, idx) => (
-            <Card key={idx}>
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
               <CardHeader>
                 <Skeleton className='h-4 w-1/3' />
                 <Skeleton className='h-3 w-1/2 mt-2' />
@@ -138,41 +138,67 @@ export default function OrdersPage() {
       ) : (
         <motion.div className='space-y-4 px-6'>
           <AnimatePresence>
-            {orders.map((order) => (
-              <motion.div
-                key={order.id}
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Order #{order.id}</CardTitle>
-                    <CardDescription>
-                      {format(new Date(order.serviceDate), 'PPP')}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className='mb-1'>Item: {order.itemName}</p>
-                    <p className='mb-1'>Status: {order.status}</p>
-                    <p className='mb-1'>
-                      Price:{' '}
-                      {order.finalPrice != null
-                        ? new Intl.NumberFormat('en-US', {
-                            style: 'currency',
-                            currency: 'USD',
-                          }).format(order.finalPrice)
-                        : 'Pending'}
-                    </p>
-                  </CardContent>
-                  <CardFooter className='bg-muted/50 border-t px-6 py-3'>
-                    <Button variant='outline' size='sm' asChild>
-                      <a href={`/dashboard/orders/${order.id}`}>View Details</a>
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            ))}
+            {orders.map((order) => {
+              const canEdit =
+                order.status === 'PENDING' || order.status === 'WAITING_APPROVAL';
+              return (
+                <motion.div
+                  key={order.id}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 10 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <div className='flex justify-between items-center'>
+                        <div>
+                          <CardTitle>Order #{order.id}</CardTitle>
+                          <CardDescription>
+                            {format(new Date(order.serviceDate), 'PPP')}
+                          </CardDescription>
+                        </div>
+                        {canEdit && (
+                          <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={() => router.push(`/orders/${order.id}/edit`)}
+                            aria-label='Edit order'
+                          >
+                            <Edit2 className='h-4 w-4' />
+                          </Button>
+                        )}
+                      </div>
+                    </CardHeader>
+
+                    <CardContent>
+                      <p className='mb-1'>Item: {order.itemName}</p>
+                      <p className='mb-1'>Condition: {order.itemCondition}</p>
+                      <p className='mb-1'>Details: {order.repairDetails}</p>
+                      <p className='mb-1'>Status: {order.status}</p>
+                      <p className='mb-1'>
+                        Price:{' '}
+                        {order.finalPrice != null
+                          ? new Intl.NumberFormat('en-US', {
+                              style: 'currency',
+                              currency: 'USD',
+                            }).format(order.finalPrice)
+                          : 'Pending'}
+                      </p>
+                    </CardContent>
+
+                    <CardFooter className='bg-muted/50 border-t px-6 py-3'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() => router.push(`/orders/${order.id}`)}
+                      >
+                        View Details
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </motion.div>
       )}
