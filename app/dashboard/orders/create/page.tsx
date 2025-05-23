@@ -58,8 +58,6 @@ export default function ServiceOrderPage() {
   const fetchTechnicians = async () => {
     try {
       const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings`;
-      console.log('Review API URL:', reviewApiUrl);
-      
       const response = await fetch(reviewApiUrl);
       
       if (!response.ok) {
@@ -67,12 +65,6 @@ export default function ServiceOrderPage() {
       }
 
       const techniciansData = await response.json();
-      console.log('Technicians Data:', techniciansData);
-
-      if (!Array.isArray(techniciansData)) {
-        throw new Error('Technicians data is not an array');
-      }
-
       const formattedTechnicians = techniciansData.map((technician: any) => ({
         id: technician.technicianId,
         name: technician.fullName,
