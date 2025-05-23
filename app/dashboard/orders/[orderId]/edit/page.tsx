@@ -117,7 +117,7 @@ export default function EditOrderPage() {
       );
       if (!res.ok) throw new Error(`Status ${res.status}`);
       toast.success('Order updated successfully');
-      router.push(`/orders/${orderId}`);
+      router.push(`/dashboard/orders/${orderId}`);
     } catch (e) {
       console.error(e);
       toast.error('Failed to update order.');
@@ -224,7 +224,7 @@ export default function EditOrderPage() {
         <div className="flex justify-end space-x-2">
           <Button
             variant="outline"
-            onClick={() => router.push(`/orders/${orderId}`)}
+            onClick={() => router.push(`/dashboard/orders/${orderId}`)}
             disabled={isSaving}
           >
             Cancel
