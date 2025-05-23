@@ -1,6 +1,6 @@
 'use client';
 
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useRouter, useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -32,12 +32,12 @@ interface OrderDetail {
   status: string;
   paymentMethodId: string;
   couponId?: string | null;
-  repairEstimate?: string;
-  repairPrice?: number;
-  repairReport?: string;
   estimatedCompletionTime?: string;
   estimatedPrice?: number;
   finalPrice?: number;
+  repairEstimate?: string;
+  repairPrice?: number;
+  repairReport?: string;
   createdAt: string;
   updatedAt: string;
   completedAt?: string | null;
@@ -53,7 +53,8 @@ export default function OrderDetailPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canEdit = order?.status === 'PENDING' || order?.status === 'WAITING_APPROVAL';
+  const canEdit =
+    order?.status === 'PENDING' || order?.status === 'WAITING_APPROVAL';
 
   const fetchOrder = async () => {
     setError(null);
@@ -74,7 +75,9 @@ export default function OrderDetailPage() {
       }
       if (!res.ok) throw new Error(`Status ${res.status}`);
 
-      const data = (await res.json()) as OrderDetail;
+      // Extract wrapped order object from backend response
+      const json = await res.json();
+      const data = (json.order as OrderDetail) ?? (json as OrderDetail);
       setOrder(data);
     } catch (err) {
       console.error(err);
@@ -135,7 +138,6 @@ export default function OrderDetailPage() {
   return (
     <DashboardLayout>
       <div className="max-w-lg mx-auto space-y-6 px-6">
-
         <div className="flex items-center space-x-2">
           <Button
             variant="ghost"
@@ -162,7 +164,7 @@ export default function OrderDetailPage() {
             <Button
               variant="secondary"
               size="icon"
-              onClick={() => router.push(`/orders/${orderId}/edit`)}
+              onClick={() => router.push(`/dashboard/orders/${orderId}/edit`)}
               aria-label="Edit order"
             >
               <Edit2 className="h-4 w-4" />
@@ -174,9 +176,11 @@ export default function OrderDetailPage() {
           <CardHeader>
             <CardTitle>Details</CardTitle>
             <CardDescription>
-              {format(new Date(order.serviceDate), 'PPPpp')}
+              {/* Use parseISO to correctly parse date string */}
+              {format(parseISO(order.serviceDate), 'PPPpp')}
             </CardDescription>
           </CardHeader>
+
           <CardContent className="space-y-2">
             <p><strong>Item:</strong> {order.itemName}</p>
             <p><strong>Condition:</strong> {order.itemCondition}</p>
@@ -188,35 +192,16 @@ export default function OrderDetailPage() {
                 {order.technicianRating != null ? ` (${order.technicianRating.toFixed(1)})` : ''}
               </p>
             )}
+            {order.estimatedCompletionTime && <p><strong>Est. Completion:</strong> {order.estimatedCompletionTime}</p>}
+            {order.estimatedPrice != null && <p><strong>Est. Price:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.estimatedPrice)}</p>}
+            {order.finalPrice != null && <p><strong>Final Price:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.finalPrice)}</p>}
             {order.repairEstimate && <p><strong>Estimate:</strong> {order.repairEstimate}</p>}
-            {order.estimatedCompletionTime && (
-              <p><strong>Est. Completion:</strong> {order.estimatedCompletionTime}</p>
-            )}
-            {order.estimatedPrice != null && (
-              <p>
-                <strong>Est. Price:</strong>{' '}
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.estimatedPrice)}
-              </p>
-            )}
-            {order.repairPrice != null && (
-              <p>
-                <strong>Repair Price:</strong>{' '}
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.repairPrice)}
-              </p>
-            )}
-            {order.finalPrice != null && (
-              <p>
-                <strong>Final Price:</strong>{' '}
-                {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.finalPrice)}
-              </p>
-            )}
+            {order.repairPrice != null && <p><strong>Repair Price:</strong> {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(order.repairPrice)}</p>}
             {order.repairReport && <p><strong>Report:</strong> {order.repairReport}</p>}
             {order.couponId && <p><strong>Coupon:</strong> {order.couponId}</p>}
-            <p><strong>Created At:</strong> {format(new Date(order.createdAt), 'PPPpp')}</p>
-            <p><strong>Updated At:</strong> {format(new Date(order.updatedAt), 'PPPpp')}</p>
-            {order.completedAt && (
-              <p><strong>Completed At:</strong> {format(new Date(order.completedAt), 'PPPpp')}</p>
-            )}
+            <p><strong>Created At:</strong> {format(parseISO(order.createdAt), 'PPPpp')}</p>
+            <p><strong>Updated At:</strong> {format(parseISO(order.updatedAt), 'PPPpp')}</p>
+            {order.completedAt && <p><strong>Completed At:</strong> {format(parseISO(order.completedAt), 'PPPpp')}</p>}
           </CardContent>
         </Card>
       </div>
