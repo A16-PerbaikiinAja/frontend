@@ -90,6 +90,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/technicians', label: 'Technicians', icon: Users },
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reports', label: 'Reports', icon: Star },
+    { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
     { href: '/dashboard/payments', label: 'Payment Methods', icon: CreditCard },
     { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
