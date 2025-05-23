@@ -81,6 +81,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/requests', label: 'Repair Requests', icon: Tool },
     { href: '/dashboard/jobs', label: 'Jobs In Progress', icon: Wrench },
     { href: '/dashboard/earnings', label: 'Earnings', icon: CreditCard },
+    { href: '/dashboard/reviews/technician', label: 'Reviews For You', icon: Star },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
   ];
 
