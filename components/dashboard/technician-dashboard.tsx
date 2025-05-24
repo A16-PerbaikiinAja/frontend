@@ -13,7 +13,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -131,7 +131,6 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
   const stats = {
     totalJobsCompleted: user.totalJobsCompleted,
     totalEarnings: user.totalEarnings,
-    averageRating: 4.8,
     pendingRequests: incomingRequests.length,
   };
 
@@ -155,6 +154,37 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
       },
     },
   };
+
+  const [technicianRating, setTechnicianRating] = useState<{
+    averageRating: number;
+    totalReviews: number;
+  } | null>(null);
+  const [loadingRating, setLoadingRating] = useState(true);
+  const [errorRating, setErrorRating] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchRating = async () => {
+      setLoadingRating(true);
+      setErrorRating(null);
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings/${user.id}`,
+        );
+        if (!res.ok) throw new Error('Gagal fetch rating');
+        const data = await res.json();
+        setTechnicianRating({
+          averageRating: data.averageRating,
+          totalReviews: data.totalReviews,
+        });
+      } catch (err: any) {
+        setTechnicianRating(null);
+        setErrorRating(err instanceof Error ? err.message : 'Gagal fetch rating');
+      } finally {
+        setLoadingRating(false);
+      }
+    };
+    if (user?.id) fetchRating();
+  }, [user?.id]);
 
   return (
     <motion.div
@@ -203,9 +233,26 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center">
-              <Star className="mr-2 h-5 w-5 fill-current text-yellow-500" />
-              <div className="text-2xl font-bold">{stats.averageRating}</div>
+            <div className="flex flex-col items-start">
+              <div className="flex items-center">
+                <Star className="mr-2 h-5 w-5 fill-current text-yellow-500" />
+                <div className="text-2xl font-bold">
+                  {loadingRating
+                    ? '...'
+                    : technicianRating
+                      ? technicianRating.averageRating.toFixed(2)
+                      : 'N/A'}
+                </div>
+              </div>
+              <div className="ml-7 text-xs text-gray-500">
+                {loadingRating
+                  ? ''
+                  : technicianRating
+                    ? `${technicianRating.totalReviews} reviews`
+                    : errorRating
+                      ? errorRating
+                      : ''}
+              </div>
             </div>
           </CardContent>
         </Card>
