@@ -100,8 +100,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      const body = await res.json();
-      if (!res.ok) throw body;
+
+      if (!res.ok) {
+        const body = await res.json();
+        throw body;
+      }
 
       await login(data.email, data.password);
     } catch (err) {

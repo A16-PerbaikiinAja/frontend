@@ -1,31 +1,36 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  Loader2, 
-  Percent, 
-  Settings, 
-  Wrench, 
-  CreditCard, 
-  Info, 
+import {
+  ArrowLeft,
+  Calendar,
+  CreditCard,
   FileText,
-  User
+  Info,
+  Loader2,
+  Percent,
+  Settings,
+  Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function ServiceOrderPage() {
   const [formData, setFormData] = useState({
@@ -37,61 +42,59 @@ export default function ServiceOrderPage() {
     paymentMethodId: '',
     couponId: '',
   });
-  
+
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [formFocused, setFormFocused] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
 
   interface Technician {
-  id: string;
-  name: string;
-  imageUrl: string;
-  specialty: string;
-  rating: number;
-  reviews: number;
-}
+    id: string;
+    name: string;
+    imageUrl: string;
+    specialty: string;
+    rating: number;
+    reviews: number;
+  }
 
   const [technicians, setTechnicians] = useState<Technician[]>([]);
 
   useEffect(() => {
-  const fetchTechnicians = async () => {
-    try {
-      const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings`;
-      console.log('Review API URL:', reviewApiUrl);
-      
-      const response = await fetch(reviewApiUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch technicians.`);
+    const fetchTechnicians = async () => {
+      try {
+        const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings`;
+
+        const response = await fetch(reviewApiUrl);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch technicians.`);
+        }
+
+        const techniciansData = await response.json();
+
+        if (!Array.isArray(techniciansData)) {
+          throw new Error('Technicians data is not an array');
+        }
+
+        const formattedTechnicians = techniciansData.map((technician: any) => ({
+          id: technician.technicianId,
+          name: technician.fullName,
+          specialty: technician.specialization || 'General Technician',
+          rating: technician.averageRating || 0,
+          reviews: technician.totalReviews || 0,
+          imageUrl:
+            technician.profilePhoto ||
+            'https://ui-avatars.com/api/?name=${encodeURIComponent(technician.fullName)}&background=random',
+        }));
+
+        setTechnicians(formattedTechnicians);
+      } catch (error) {
+        toast.error('Failed to load technicians. Please try again later.');
       }
+    };
 
-      const techniciansData = await response.json();
-      console.log('Technicians Data:', techniciansData);
-
-      if (!Array.isArray(techniciansData)) {
-        throw new Error('Technicians data is not an array');
-      }
-
-      const formattedTechnicians = techniciansData.map((technician: any) => ({
-        id: technician.technicianId,
-        name: technician.fullName,
-        specialty: technician.specialization || 'General Technician',
-        rating: technician.averageRating || 0,
-        reviews: technician.totalReviews || 0,
-        imageUrl: technician.profilePhoto || 'https://ui-avatars.com/api/?name=${encodeURIComponent(technician.fullName)}&background=random',
-      }));
-
-      setTechnicians(formattedTechnicians);
-    } catch (error) {
-      console.error('Error fetching technicians:', error);
-      toast.error('Failed to load technicians. Please try again later.');
-    }
-  };
-
-  fetchTechnicians();
+    fetchTechnicians();
   }, []);
-
 
   const paymentMethods = [
     { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Transfer Bank' },
@@ -103,7 +106,12 @@ export default function ServiceOrderPage() {
   const coupons = [
     { id: '123e4567-e89b-12d3-a456-426614174001', code: 'WELCOME10', discount: '10%', valid: true },
     { id: '123e4567-e89b-12d3-a456-426614174002', code: 'REPAIR20', discount: '20%', valid: true },
-    { id: '123e4567-e89b-12d3-a456-426614174003', code: 'FIRST50', discount: 'Rp50.000', valid: false },
+    {
+      id: '123e4567-e89b-12d3-a456-426614174003',
+      code: 'FIRST50',
+      discount: 'Rp50.000',
+      valid: false,
+    },
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -123,18 +131,15 @@ export default function ServiceOrderPage() {
 
   const validateStep1 = () => {
     const newErrors: Partial<Record<string, string>> = {};
-    
-    if (!formData.itemName.trim()) 
-      newErrors.itemName = 'Item name is required';
-      
-    if (!formData.itemCondition.trim()) 
+
+    if (!formData.itemName.trim()) newErrors.itemName = 'Item name is required';
+
+    if (!formData.itemCondition.trim())
       newErrors.itemCondition = 'Item condition must be described';
-      
-    if (!formData.repairDetails.trim())
-      newErrors.repairDetails = 'Repair details are required';
-      
-    if (!formData.serviceDate.trim())
-      newErrors.serviceDate = 'Service date must be selected';
+
+    if (!formData.repairDetails.trim()) newErrors.repairDetails = 'Repair details are required';
+
+    if (!formData.serviceDate.trim()) newErrors.serviceDate = 'Service date must be selected';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -142,9 +147,8 @@ export default function ServiceOrderPage() {
 
   const validateStep2 = () => {
     const newErrors: Partial<Record<string, string>> = {};
-    
-    if (!formData.technicianId)
-      newErrors.technicianId = 'Please select a technician';
+
+    if (!formData.technicianId) newErrors.technicianId = 'Please select a technician';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -152,9 +156,8 @@ export default function ServiceOrderPage() {
 
   const validateStep3 = () => {
     const newErrors: Partial<Record<string, string>> = {};
-    
-    if (!formData.paymentMethodId)
-      newErrors.paymentMethodId = 'Payment method is required';
+
+    if (!formData.paymentMethodId) newErrors.paymentMethodId = 'Payment method is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -176,19 +179,18 @@ export default function ServiceOrderPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateStep3()) {
       toast.error('Please fill in all required fields');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     setTimeout(() => {
-      console.log('Form submitted:', formData);
       toast.success('Order successfully created!');
       setIsSubmitting(false);
-      
+
       setFormData({
         itemName: '',
         itemCondition: '',
@@ -243,16 +245,13 @@ export default function ServiceOrderPage() {
   ];
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+    <div className="bg-background flex min-h-screen w-full flex-col items-center justify-center">
       <motion.div
         className="w-full max-w-2xl px-4 py-8 md:px-6"
         initial="hidden"
         animate="visible"
         variants={containerVariants}>
-        
-        <motion.div
-          className="mb-8 flex items-center"
-          variants={itemVariants}>
+        <motion.div className="mb-8 flex items-center" variants={itemVariants}>
           <Link
             href="/dashboard"
             className="text-primary hover:text-primary/90 flex items-center gap-2 transition-colors">
@@ -263,11 +262,13 @@ export default function ServiceOrderPage() {
 
         <motion.div className="space-y-8" variants={containerVariants}>
           <motion.div className="space-y-2 text-center" variants={itemVariants}>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-              <Wrench className="h-6 w-6 text-primary" />
+            <div className="bg-primary/10 mx-auto flex h-12 w-12 items-center justify-center rounded-full">
+              <Wrench className="text-primary h-6 w-6" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight">Service Order Form</h1>
-            <p className="text-muted-foreground text-sm">Fill in the details of your repair request</p>
+            <p className="text-muted-foreground text-sm">
+              Fill in the details of your repair request
+            </p>
           </motion.div>
 
           {/* Progress indicator */}
@@ -295,9 +296,10 @@ export default function ServiceOrderPage() {
             </div>
           </motion.div>
 
-          <motion.div className="rounded-lg border border-border bg-card p-6 shadow-sm" variants={itemVariants}>
+          <motion.div
+            className="border-border bg-card rounded-lg border p-6 shadow-sm"
+            variants={itemVariants}>
             <motion.form onSubmit={handleSubmit} className="space-y-6" variants={containerVariants}>
-              
               {/* Step 1: Item Details */}
               {currentStep === 1 && (
                 <motion.div
@@ -328,8 +330,8 @@ export default function ServiceOrderPage() {
                           errors.itemName
                             ? 'border-destructive'
                             : formFocused === 'itemName'
-                            ? 'border-primary ring-primary ring-1'
-                            : ''
+                              ? 'border-primary ring-primary ring-1'
+                              : ''
                         }`}
                         required
                       />
@@ -368,8 +370,8 @@ export default function ServiceOrderPage() {
                           errors.itemCondition
                             ? 'border-destructive'
                             : formFocused === 'itemCondition'
-                            ? 'border-primary ring-primary ring-1'
-                            : ''
+                              ? 'border-primary ring-primary ring-1'
+                              : ''
                         }`}
                         required
                       />
@@ -411,8 +413,8 @@ export default function ServiceOrderPage() {
                           errors.repairDetails
                             ? 'border-destructive'
                             : formFocused === 'repairDetails'
-                            ? 'border-primary ring-primary ring-1'
-                            : ''
+                              ? 'border-primary ring-primary ring-1'
+                              : ''
                         }`}
                         required
                       />
@@ -430,7 +432,7 @@ export default function ServiceOrderPage() {
                       </p>
                     </div>
                   </motion.div>
-                  
+
                   <motion.div className="space-y-2" variants={itemVariants}>
                     <Label
                       htmlFor="serviceDate"
@@ -453,8 +455,8 @@ export default function ServiceOrderPage() {
                           errors.serviceDate
                             ? 'border-destructive'
                             : formFocused === 'serviceDate'
-                            ? 'border-primary ring-primary ring-1'
-                            : ''
+                              ? 'border-primary ring-primary ring-1'
+                              : ''
                         }`}
                         required
                       />
@@ -503,14 +505,14 @@ export default function ServiceOrderPage() {
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           variants={itemVariants}>
-                          <Card 
-                            className={`cursor-pointer transition-all overflow-hidden ${
+                          <Card
+                            className={`cursor-pointer overflow-hidden transition-all ${
                               formData.technicianId === technician.id
-                                ? 'border-primary ring-1 ring-primary'
+                                ? 'border-primary ring-primary ring-1'
                                 : 'hover:border-muted-foreground/50'
                             }`}
                             onClick={() => handleSelectChange('technicianId', technician.id)}>
-                            <CardContent className="p-4 flex items-center gap-4">
+                            <CardContent className="flex items-center gap-4 p-4">
                               <Avatar className="h-16 w-16">
                                 <AvatarImage src={technician.imageUrl} alt={technician.name} />
                                 <AvatarFallback>{technician.name.charAt(0)}</AvatarFallback>
@@ -519,13 +521,17 @@ export default function ServiceOrderPage() {
                                 <div className="flex items-center justify-between">
                                   <div>
                                     <h4 className="font-medium">{technician.name}</h4>
-                                    <p className="text-muted-foreground text-sm">{technician.specialty}</p>
+                                    <p className="text-muted-foreground text-sm">
+                                      {technician.specialty}
+                                    </p>
                                   </div>
                                   <div className="text-right">
                                     <div className="flex items-center gap-1">
                                       <span className="text-yellow-500">★</span>
                                       <span className="font-medium">{technician.rating}</span>
-                                      <span className="text-muted-foreground text-xs">({technician.reviews} reviews)</span>
+                                      <span className="text-muted-foreground text-xs">
+                                        ({technician.reviews} reviews)
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
@@ -537,7 +543,7 @@ export default function ServiceOrderPage() {
                               </div>
                               {formData.technicianId === technician.id && (
                                 <div className="absolute inset-y-0 right-4 flex items-center">
-                                  <div className="bg-primary text-primary-foreground h-6 w-6 rounded-full flex items-center justify-center">
+                                  <div className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full">
                                     <svg
                                       xmlns="http://www.w3.org/2000/svg"
                                       fill="none"
@@ -545,7 +551,11 @@ export default function ServiceOrderPage() {
                                       strokeWidth={2}
                                       stroke="currentColor"
                                       className="h-4 w-4">
-                                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        d="M4.5 12.75l6 6 9-13.5"
+                                      />
                                     </svg>
                                   </div>
                                 </div>
@@ -589,14 +599,16 @@ export default function ServiceOrderPage() {
                             errors.paymentMethodId
                               ? 'border-destructive'
                               : formFocused === 'paymentMethodId'
-                              ? 'border-primary ring-primary ring-1'
-                              : ''
+                                ? 'border-primary ring-primary ring-1'
+                                : ''
                           }`}>
                           <SelectValue placeholder="Select your payment method" />
                         </SelectTrigger>
                         <SelectContent>
-                          {paymentMethods.map(method => (
-                            <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>
+                          {paymentMethods.map((method) => (
+                            <SelectItem key={method.id} value={method.id}>
+                              {method.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -611,39 +623,44 @@ export default function ServiceOrderPage() {
                       )}
                     </div>
                   </motion.div>
-                  
+
                   <motion.div className="space-y-4" variants={itemVariants}>
                     <Label className="flex items-center gap-2 text-sm">
                       <Percent className="h-3.5 w-3.5" />
                       Available Coupons
                     </Label>
-                    
+
                     <div className="grid gap-3">
                       {coupons.map((coupon) => (
                         <motion.div
                           key={coupon.id}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}>
-                          <Card 
+                          <Card
                             className={`cursor-pointer transition-all ${
-                              !coupon.valid ? 'opacity-50' : 
-                              formData.couponId === coupon.id
-                                ? 'border-primary ring-1 ring-primary'
-                                : 'hover:border-muted-foreground/50'
+                              !coupon.valid
+                                ? 'opacity-50'
+                                : formData.couponId === coupon.id
+                                  ? 'border-primary ring-primary ring-1'
+                                  : 'hover:border-muted-foreground/50'
                             }`}
-                            onClick={() => coupon.valid && handleSelectChange('couponId', coupon.id)}>
-                            <CardContent className="p-3 flex items-center justify-between">
+                            onClick={() =>
+                              coupon.valid && handleSelectChange('couponId', coupon.id)
+                            }>
+                            <CardContent className="flex items-center justify-between p-3">
                               <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 text-primary h-10 w-10 rounded-full flex items-center justify-center">
+                                <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
                                   <Percent className="h-5 w-5" />
                                 </div>
                                 <div>
                                   <h4 className="font-medium">{coupon.code}</h4>
-                                  <p className="text-muted-foreground text-sm">Discount: {coupon.discount}</p>
+                                  <p className="text-muted-foreground text-sm">
+                                    Discount: {coupon.discount}
+                                  </p>
                                 </div>
                               </div>
                               {formData.couponId === coupon.id && (
-                                <div className="bg-primary text-primary-foreground h-6 w-6 rounded-full flex items-center justify-center">
+                                <div className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full">
                                   <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     fill="none"
@@ -651,12 +668,16 @@ export default function ServiceOrderPage() {
                                     strokeWidth={2}
                                     stroke="currentColor"
                                     className="h-4 w-4">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      d="M4.5 12.75l6 6 9-13.5"
+                                    />
                                   </svg>
                                 </div>
                               )}
                               {!coupon.valid && (
-                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                <Badge variant="outline" className="text-muted-foreground text-xs">
                                   Expired
                                 </Badge>
                               )}
@@ -673,7 +694,7 @@ export default function ServiceOrderPage() {
                       <div className="grid gap-1.5 leading-none">
                         <label
                           htmlFor="terms"
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                          className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                           I agree to the terms and conditions
                         </label>
                         <p className="text-muted-foreground text-xs">

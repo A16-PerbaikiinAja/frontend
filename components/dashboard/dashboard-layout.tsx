@@ -10,7 +10,6 @@ import {
   Home,
   LogOut,
   Menu,
-  Settings,
   Star,
   Tag,
   PenToolIcon as Tool,
@@ -90,7 +89,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reports', label: 'Reports', icon: Star },
     { href: '/dashboard/payments', label: 'Payment Methods', icon: CreditCard },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
 
   const navItems =
@@ -317,9 +315,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>

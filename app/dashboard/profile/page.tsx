@@ -51,12 +51,6 @@ export default function ProfilePage() {
     confirmPassword: '',
   });
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({});
-  const [notificationSettings, setNotificationSettings] = useState({
-    orderUpdates: true,
-    promotions: true,
-    reviews: true,
-    newsletter: false,
-  });
 
   useEffect(() => {
     if (!authLoading) {
@@ -80,7 +74,6 @@ export default function ProfilePage() {
         setProfile(data);
       }
     } catch (err) {
-      console.error('Failed to fetch profile:', err);
       setError('Failed to load profile. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -143,7 +136,6 @@ export default function ProfilePage() {
         description: 'Your profile has been successfully updated.',
       });
     } catch (err) {
-      console.error('Failed to update profile:', err);
       toast.error('Failed to update profile', {
         description: 'Please try again.',
       });
@@ -157,19 +149,20 @@ export default function ProfilePage() {
 
     setIsSubmitting(true);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_API_URL}/profile`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_AUTH_API_URL}/auth/change-password`, {
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
-        method: 'PUT',
+        method: 'POST',
         body: JSON.stringify({
-          password: passwordForm.newPassword,
+          oldPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setProfile(data);
+      if (!res.ok) {
+        const body = await res.json();
+        throw body;
       }
       toast.success('Password updated', {
         description: 'Your password has been successfully changed.',
@@ -179,10 +172,9 @@ export default function ProfilePage() {
         newPassword: '',
         confirmPassword: '',
       });
-    } catch (err) {
-      console.error('Failed to update password:', err);
+    } catch (err: any) {
       toast.error('Failed to update password', {
-        description: 'Please check your current password and try again.',
+        description: err.error,
       });
     } finally {
       setIsSubmitting(false);
