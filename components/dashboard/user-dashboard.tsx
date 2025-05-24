@@ -10,9 +10,12 @@ import {
   Tag,
   PenToolIcon as Tool,
   Wrench,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -96,29 +99,6 @@ export function UserDashboard({ user }: UserDashboardProps) {
     },
   ];
 
-  const reviews = [
-    {
-      id: 'REV-1',
-      technician: {
-        name: 'David Wilson',
-        image: '/placeholder.svg?height=40&width=40',
-      },
-      rating: 5,
-      comment: 'Excellent service! Fixed my iPhone screen in just an hour.',
-      date: '2023-05-01',
-    },
-    {
-      id: 'REV-2',
-      technician: {
-        name: 'Maria Rodriguez',
-        image: '/placeholder.svg?height=40&width=40',
-      },
-      rating: 4,
-      comment: 'Good service but took a bit longer than expected.',
-      date: '2023-04-15',
-    },
-  ];
-
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -151,6 +131,57 @@ export function UserDashboard({ user }: UserDashboardProps) {
       default:
         return 'bg-gray-500';
     }
+  };
+
+  const [userReviews, setUserReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [deletingIds, setDeletingIds] = useState<string[]>([]);
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchUserReviews = async () => {
+      setLoadingReviews(true);
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review/user`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        if (!res.ok) throw new Error('Failed to fetch reviews');
+        const data = await res.json();
+        setUserReviews(data);
+      } catch (err) {
+        toast.error('Failed fetching reviews');
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+    fetchUserReviews();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this review?')) return;
+    setDeletingIds((prev) => [...prev, id]);
+    try {
+      const apiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review/${id}`;
+      const res = await fetch(apiUrl, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed deleting review');
+      setUserReviews((prev) => prev.filter((review) => review.id !== id));
+      toast.success('Review deleted!');
+    } catch (err: any) {
+      toast.error('Failed deleting review');
+    } finally {
+      setDeletingIds((prev) => prev.filter((delId) => delId !== id));
+    }
+  };
+
+  const goToEdit = (id: string) => {
+    router.push(`/dashboard/reviews/edit/${id}`);
   };
 
   return (
@@ -393,48 +424,80 @@ export function UserDashboard({ user }: UserDashboardProps) {
 
           <TabsContent value="reviews" className="mt-6 space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              {reviews.map((review) => (
-                <motion.div
-                  key={review.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="group">
-                  <Card className="overflow-hidden transition-all hover:shadow-md">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage
-                            src={review.technician.image || '/placeholder.svg'}
-                            alt={review.technician.name}
-                          />
-                          <AvatarFallback>{review.technician.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-base">{review.technician.name}</CardTitle>
-                          <div className="flex text-yellow-500">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${i < review.rating ? 'fill-current' : 'text-muted'}`}
-                              />
-                            ))}
+              {loadingReviews ? (
+                <div className="col-span-full flex min-h-[100px] items-center justify-center">
+                  Loading reviews...
+                </div>
+              ) : userReviews.length === 0 ? (
+                <div className="text-muted-foreground col-span-full text-center">
+                  You have no reviews yet.
+                </div>
+              ) : (
+                userReviews.map((review) => (
+                  <motion.div
+                    key={review.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="group">
+                    <Card className="overflow-hidden transition-all hover:shadow-md">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar>
+                            <AvatarImage
+                              src={'/placeholder.svg?height=40&width=40'}
+                              alt={review.technicianFullName}
+                            />
+                            <AvatarFallback>{review.technicianFullName?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <CardTitle className="text-base">{review.technicianFullName}</CardTitle>
+                            <div className="flex text-yellow-500">
+                              {[...Array(5)].map((_, i) => (
+                                <Star
+                                  key={i}
+                                  className={`h-4 w-4 ${
+                                    i < review.rating ? 'fill-current' : 'text-muted'
+                                  }`}
+                                />
+                              ))}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground text-sm">{review.comment}</p>
-                    </CardContent>
-                    <CardFooter className="bg-muted/50 flex items-center justify-between border-t px-6 py-3">
-                      <span className="text-muted-foreground text-xs">{review.date}</span>
-                      <Button variant="ghost" size="sm">
-                        Edit Review
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              ))}
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-muted-foreground text-sm">{review.comment}</p>
+                      </CardContent>
+                      <CardFooter className="bg-muted/50 flex items-center justify-between border-t px-6 py-3">
+                        <span className="text-muted-foreground text-xs">
+                          {review.createdAt
+                            ? new Date(review.createdAt).toLocaleDateString('id-ID', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                              })
+                            : ''}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => goToEdit(review.id)}>
+                            Edit Review
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDelete(review.id)}
+                            disabled={deletingIds.includes(review.id)}
+                            aria-label="Delete review">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {deletingIds.includes(review.id) ? 'Deleting...' : 'Delete'}
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))
+              )}
               <Card className="flex flex-col items-center justify-center p-6 text-center">
                 <div className="bg-primary/10 mb-4 rounded-full p-3">
                   <Star className="text-primary h-6 w-6" />
@@ -444,7 +507,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                   Share your experience with our technicians and help others find the best service.
                 </p>
                 <Button variant="outline" size="sm">
-                  Write Review
+                  <Link href="/dashboard/reviews/create">Write a Review</Link>
                 </Button>
               </Card>
             </div>
