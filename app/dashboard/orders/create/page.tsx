@@ -51,6 +51,9 @@ export default function ServiceOrderPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showCoupons, setShowCoupons] = useState(false);
 
+  const DEFAULT_PRICE = 200000;
+  const [couponPreviews, setCouponPreviews] = useState<Record<string, number>>({});
+
   const technicians = [
     {
       id: '123e4567-e89b-12d3-a456-426614174001',
@@ -93,9 +96,38 @@ export default function ServiceOrderPage() {
         return res.json();
       })
       .then((data) => {
-        console.log('COUPON DATA:', data); // debug di sini
-        setCoupons(data.coupons || []);
+        console.log('COUPON DATA:', data);
+        const coupons = data.coupons || [];
+        setCoupons(coupons);
+
+        coupons.forEach((coupon) => {
+          if (!coupon?.id) {
+            console.error('Coupon tanpa ID:', coupon);
+            return;
+          }
+
+          const url = `${process.env.NEXT_PUBLIC_ORDER_API_URL}/coupons/${coupon.id}/preview`;
+          console.log('Fetching:', url);
+
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ original_price: DEFAULT_PRICE }),
+          })
+            .then((res) => res.json())
+            .then((preview) => {
+              console.log('Preview response:', preview); // Tambahan debug
+              setCouponPreviews((prev) => ({
+                ...prev,
+                [coupon.id]: preview.discounted_price,
+              }));
+            })
+            .catch((err) => {
+              console.error('Gagal fetch preview:', err);
+            });
+        });
       })
+
       .catch((err) => {
         console.error('Gagal fetch:', err);
         toast.error('Gagal memuat kupon');
@@ -116,8 +148,10 @@ export default function ServiceOrderPage() {
       [name]: value,
     });
   };
-  const formatRupiah = (num: number) => 'Rp' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-
+  const formatRupiah = (num: number) => {
+    const rounded = Math.round(num);
+    return 'Rp' + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
   const validateStep1 = () => {
     const newErrors: Partial<Record<string, string>> = {};
 
@@ -672,6 +706,12 @@ export default function ServiceOrderPage() {
                                         </p>
                                         <p className="text-muted-foreground text-xs">
                                           Type: {coupon.couponType}
+                                        </p>
+                                        <p className="text-muted-foreground text-sm">
+                                          Discounted Price:{' '}
+                                          {couponPreviews[coupon.id] != null
+                                            ? formatRupiah(couponPreviews[coupon.id])
+                                            : 'Loading...'}
                                         </p>
                                       </div>
                                     </div>
