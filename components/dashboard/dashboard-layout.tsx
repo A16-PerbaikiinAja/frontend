@@ -72,6 +72,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/orders', label: 'My Orders', icon: Tool },
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
+    { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
   ];
 
