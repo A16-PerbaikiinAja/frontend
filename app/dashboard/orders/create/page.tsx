@@ -4,25 +4,23 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft,
   Calendar,
-  CreditCard,
-  FileText,
-  Info,
   Loader2,
   Percent,
   Settings,
   Wrench,
+  CreditCard,
+  Info,
+  FileText,
+  User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -30,7 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { AnimatePresence } from 'framer-motion';
 
 export default function ServiceOrderPage() {
   const [formData, setFormData] = useState({
@@ -47,48 +49,34 @@ export default function ServiceOrderPage() {
   const [formFocused, setFormFocused] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [showCoupons, setShowCoupons] = useState(false);
 
-  interface Technician {
-    id: string;
-    name: string;
-    imageUrl: string;
-    specialty: string;
-    rating: number;
-    reviews: number;
-  }
-
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
-
-  useEffect(() => {
-    const fetchTechnicians = async () => {
-      try {
-        const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings`;
-        const response = await fetch(reviewApiUrl);
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch technicians.`);
-        }
-
-        const techniciansData = await response.json();
-        const formattedTechnicians = techniciansData.map((technician: any) => ({
-          id: technician.technicianId,
-          name: technician.fullName,
-          specialty: technician.specialization || 'General Technician',
-          rating: technician.averageRating || 0,
-          reviews: technician.totalReviews || 0,
-          imageUrl:
-            technician.profilePhoto ||
-            'https://ui-avatars.com/api/?name=${encodeURIComponent(technician.fullName)}&background=random',
-        }));
-
-        setTechnicians(formattedTechnicians);
-      } catch (error) {
-        toast.error('Failed to load technicians. Please try again later.');
-      }
-    };
-
-    fetchTechnicians();
-  }, []);
+  const technicians = [
+    {
+      id: '123e4567-e89b-12d3-a456-426614174001',
+      name: 'David Johnson',
+      specialty: 'Electronics',
+      rating: 4.8,
+      reviews: 58,
+      imageUrl: 'https://randomuser.me/api/portraits/men/32.jpg',
+    },
+    {
+      id: '123e4567-e89b-12d3-a456-426614174002',
+      name: 'Sarah Williams',
+      specialty: 'Computers',
+      rating: 4.9,
+      reviews: 72,
+      imageUrl: 'https://randomuser.me/api/portraits/women/44.jpg',
+    },
+    {
+      id: '123e4567-e89b-12d3-a456-426614174003',
+      name: 'Michael Rodriguez',
+      specialty: 'Home Appliances',
+      rating: 4.7,
+      reviews: 43,
+      imageUrl: 'https://randomuser.me/api/portraits/men/67.jpg',
+    },
+  ];
 
   const paymentMethods = [
     { id: '123e4567-e89b-12d3-a456-426614174001', name: 'Transfer Bank' },
@@ -97,16 +85,22 @@ export default function ServiceOrderPage() {
     { id: '123e4567-e89b-12d3-a456-426614174004', name: 'Bayar di Tempat' },
   ];
 
-  const coupons = [
-    { id: '123e4567-e89b-12d3-a456-426614174001', code: 'WELCOME10', discount: '10%', valid: true },
-    { id: '123e4567-e89b-12d3-a456-426614174002', code: 'REPAIR20', discount: '20%', valid: true },
-    {
-      id: '123e4567-e89b-12d3-a456-426614174003',
-      code: 'FIRST50',
-      discount: 'Rp50.000',
-      valid: false,
-    },
-  ];
+  const [coupons, setCoupons] = useState([]);
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/coupons/valid`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed to fetch coupons');
+        return res.json();
+      })
+      .then((data) => {
+        console.log('COUPON DATA:', data); // debug di sini
+        setCoupons(data.coupons || []);
+      })
+      .catch((err) => {
+        console.error('Gagal fetch:', err);
+        toast.error('Gagal memuat kupon');
+      });
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -122,6 +116,7 @@ export default function ServiceOrderPage() {
       [name]: value,
     });
   };
+  const formatRupiah = (num: number) => 'Rp' + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 
   const validateStep1 = () => {
     const newErrors: Partial<Record<string, string>> = {};
@@ -182,6 +177,7 @@ export default function ServiceOrderPage() {
     setIsSubmitting(true);
 
     setTimeout(() => {
+      console.log('Form submitted:', formData);
       toast.success('Order successfully created!');
       setIsSubmitting(false);
 
@@ -492,6 +488,7 @@ export default function ServiceOrderPage() {
                         </motion.p>
                       )}
                     </div>
+
                     <div className="grid gap-4">
                       {technicians.map((technician) => (
                         <motion.div
@@ -619,67 +616,90 @@ export default function ServiceOrderPage() {
                   </motion.div>
 
                   <motion.div className="space-y-4" variants={itemVariants}>
-                    <Label className="flex items-center gap-2 text-sm">
-                      <Percent className="h-3.5 w-3.5" />
-                      Available Coupons
-                    </Label>
+                    <motion.div
+                      className="bg-card hover:bg-muted/70 w-full cursor-pointer rounded-lg border p-4 shadow-sm transition-colors"
+                      onClick={() => setShowCoupons((prev) => !prev)}
+                      whileHover={{ scale: 1.02 }}>
+                      <div className="flex w-full items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Percent className="text-primary h-4 w-4" />
+                          <span className="text-sm font-medium">Available Coupons</span>
+                        </div>
+                        <Button variant="outline" size="sm" className="pointer-events-none text-xs">
+                          {showCoupons ? 'Sembunyikan' : 'Lihat'}
+                        </Button>
+                      </div>
+                    </motion.div>
 
-                    <div className="grid gap-3">
-                      {coupons.map((coupon) => (
+                    <AnimatePresence>
+                      {showCoupons && (
                         <motion.div
-                          key={coupon.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}>
-                          <Card
-                            className={`cursor-pointer transition-all ${
-                              !coupon.valid
-                                ? 'opacity-50'
-                                : formData.couponId === coupon.id
-                                  ? 'border-primary ring-primary ring-1'
-                                  : 'hover:border-muted-foreground/50'
-                            }`}
-                            onClick={() =>
-                              coupon.valid && handleSelectChange('couponId', coupon.id)
-                            }>
-                            <CardContent className="flex items-center justify-between p-3">
-                              <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
-                                  <Percent className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <h4 className="font-medium">{coupon.code}</h4>
-                                  <p className="text-muted-foreground text-sm">
-                                    Discount: {coupon.discount}
-                                  </p>
-                                </div>
-                              </div>
-                              {formData.couponId === coupon.id && (
-                                <div className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full">
-                                  <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    strokeWidth={2}
-                                    stroke="currentColor"
-                                    className="h-4 w-4">
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      d="M4.5 12.75l6 6 9-13.5"
-                                    />
-                                  </svg>
-                                </div>
-                              )}
-                              {!coupon.valid && (
-                                <Badge variant="outline" className="text-muted-foreground text-xs">
-                                  Expired
-                                </Badge>
-                              )}
-                            </CardContent>
-                          </Card>
+                          key="coupons"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="mt-4 overflow-hidden">
+                          <div className="grid max-h-[80vh] w-full gap-3 overflow-x-hidden overflow-y-auto pr-1">
+                            {coupons.map((coupon) => (
+                              <motion.div
+                                key={coupon.id}
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}>
+                                <Card
+                                  className={`cursor-pointer transition-all ${
+                                    formData.couponId === coupon.id
+                                      ? 'border-primary ring-primary ring-1'
+                                      : 'hover:border-muted-foreground/50'
+                                  }`}
+                                  onClick={() => handleSelectChange('couponId', coupon.id)}>
+                                  <CardContent className="flex items-center justify-between p-3">
+                                    <div className="flex items-center gap-3">
+                                      <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
+                                        <Percent className="h-5 w-5" />
+                                      </div>
+                                      <div>
+                                        <h4 className="font-medium">{coupon.code}</h4>
+                                        <p className="text-muted-foreground text-sm">
+                                          Discount:{' '}
+                                          {coupon.couponType === 'FIXED'
+                                            ? formatRupiah(coupon.discount_amount)
+                                            : coupon.couponType === 'PERCENTAGE'
+                                              ? `${coupon.discount_amount}%`
+                                              : coupon.couponType === 'RANDOM'
+                                                ? `Random hingga ${formatRupiah(coupon.discount_amount)}`
+                                                : 'Unknown type'}
+                                        </p>
+                                        <p className="text-muted-foreground text-xs">
+                                          Type: {coupon.couponType}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    {formData.couponId === coupon.id && (
+                                      <div className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          fill="none"
+                                          viewBox="0 0 24 24"
+                                          strokeWidth={2}
+                                          stroke="currentColor"
+                                          className="h-4 w-4">
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            d="M4.5 12.75l6 6 9-13.5"
+                                          />
+                                        </svg>
+                                      </div>
+                                    )}
+                                  </CardContent>
+                                </Card>
+                              </motion.div>
+                            ))}
+                          </div>
                         </motion.div>
-                      ))}
-                    </div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
 
                   <motion.div className="pt-2" variants={itemVariants}>
