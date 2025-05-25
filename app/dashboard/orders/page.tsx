@@ -1,33 +1,62 @@
 'use client';
 
+import type React from 'react';
+
+import { format } from 'date-fns';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
-  ArrowLeft,
+  AlertTriangle,
   Calendar,
   CheckCircle2,
-  ClipboardList,
+  ChevronDown,
+  ChevronUp,
   Clock,
-  PlusCircle,
-  XCircle,
-  AlertTriangle,
-  ThumbsUp,
+  FileText,
+  Filter,
   Hammer,
+  MessageSquare,
+  Package,
+  PlusCircle,
+  RefreshCw,
+  Search,
+  ThumbsUp,
+  XCircle,
 } from 'lucide-react';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardLayout } from '@/components/dashboard/dashboard-layout';
+import { EmptyState } from '@/components/dashboard/empty-state';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/contexts/auth-provider';
 
-type OrderStatus = 
-  'PENDING' | 
-  'WAITING_APPROVAL' | 
-  'APPROVED' | 
-  'IN_PROGRESS' |
-  'COMPLETED' | 
-  'REJECTED' | 
-  'CANCELLED';
+type OrderStatus =
+  | 'PENDING'
+  | 'WAITING_APPROVAL'
+  | 'APPROVED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'REJECTED'
+  | 'CANCELLED';
 
 interface Order {
   id: string;
@@ -41,281 +70,541 @@ interface Order {
   createdAt: string;
 }
 
-const mockOrders: Order[] = [
-  {
-    id: '2024-05-001',
-    itemName: 'Samsung Galaxy S22',
-    repairDetails: 'Screen replacement and battery upgrade',
-    serviceDate: '2024-05-12',
-    status: 'PENDING',
-    estimatedPrice: 250,
-    createdAt: '2024-05-04',
-  },
-  {
-    id: '2024-05-002',
-    itemName: 'MacBook Pro 2021',
-    repairDetails: 'Keyboard replacement and system diagnostic',
-    serviceDate: '2024-05-10',
-    status: 'WAITING_APPROVAL',
-    estimatedPrice: 350,
-    technician: 'John Smith',
-    createdAt: '2024-05-03',
-  },
-  {
-    id: '2024-04-003',
-    itemName: 'Sony 55" TV',
-    repairDetails: 'Power issue troubleshooting',
-    serviceDate: '2024-04-28',
-    status: 'APPROVED',
-    estimatedPrice: 150,
-    technician: 'Mike Johnson',
-    createdAt: '2024-04-25',
-  },
-  {
-    id: '2024-04-004',
-    itemName: 'Xiaomi Vacuum Cleaner',
-    repairDetails: 'Motor replacement',
-    serviceDate: '2024-04-20',
-    status: 'IN_PROGRESS',
-    estimatedPrice: 120,
-    technician: 'Sarah Williams',
-    createdAt: '2024-04-15',
-  },
-  {
-    id: '2024-03-005',
-    itemName: 'Dell XPS 15',
-    repairDetails: 'Fan replacement and cooling system repair',
-    serviceDate: '2024-03-25',
-    status: 'REJECTED',
-    estimatedPrice: 200,
-    createdAt: '2024-03-20',
-  },
-  {
-    id: '2024-03-006',
-    itemName: 'iPhone 13',
-    repairDetails: 'Camera module replacement',
-    serviceDate: '2024-03-18',
-    status: 'COMPLETED',
-    estimatedPrice: 180,
-    finalPrice: 180,
-    technician: 'James Wilson',
-    createdAt: '2024-03-15',
-  },
-  {
-    id: '2024-03-007',
-    itemName: 'Acer Laptop',
-    repairDetails: 'Motherboard repair and memory upgrade',
-    serviceDate: '2024-03-10',
-    status: 'CANCELLED',
-    estimatedPrice: 300,
-    createdAt: '2024-03-08',
-  },
-];
-
-const getStatusColor = (status: OrderStatus) => {
-  switch (status) {
-    case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500';
-    case 'WAITING_APPROVAL':
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-500';
-    case 'APPROVED':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500';
-    case 'IN_PROGRESS':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-500';
-    case 'COMPLETED':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500';
-    case 'REJECTED':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500';
-    case 'CANCELLED':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-500';
-    default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
-  }
-};
-
-const getStatusIcon = (status: OrderStatus) => {
-  switch (status) {
-    case 'PENDING':
-      return <Clock className="h-4 w-4" />;
-    case 'WAITING_APPROVAL':
-      return <AlertTriangle className="h-4 w-4" />;
-    case 'APPROVED':
-      return <ThumbsUp className="h-4 w-4" />;
-    case 'IN_PROGRESS':
-      return <Hammer className="h-4 w-4 animate-spin-slow" />;
-    case 'COMPLETED':
-      return <CheckCircle2 className="h-4 w-4" />;
-    case 'REJECTED':
-      return <XCircle className="h-4 w-4" />;
-    case 'CANCELLED':
-      return <XCircle className="h-4 w-4" />;
-    default:
-      return <Clock className="h-4 w-4" />;
-  }
-};
-
-export default function OrderHistoryPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'ALL'>('ALL');
+export default function OrdersPage() {
+  const { user, isLoading: authLoading } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
+  const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setOrders(mockOrders);
-      setIsLoading(false);
-    }, 800);
+    if (!authLoading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        loadOrders();
+      }
+    }
+  }, [user, authLoading, router]);
 
-    return () => clearTimeout(timer);
-  }, []);
+  useEffect(() => {
+    if (!orders.length) return;
 
-  const filteredOrders = orders
-    .filter((order) => {
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
+    let filtered = [...orders];
+
+    if (activeTab !== 'all') {
+      const statusMap: { [key: string]: OrderStatus } = {
+        pending: 'PENDING',
+        'waiting-approval': 'WAITING_APPROVAL',
+        approved: 'APPROVED',
+        'in-progress': 'IN_PROGRESS',
+        completed: 'COMPLETED',
+        rejected: 'REJECTED',
+        cancelled: 'CANCELLED',
+      };
+      filtered = filtered.filter((order) => order.status === statusMap[activeTab]);
+    }
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order.id.toLowerCase().includes(query) ||
           order.itemName.toLowerCase().includes(query) ||
           order.repairDetails.toLowerCase().includes(query) ||
-          order.id.toLowerCase().includes(query)
-        );
+          (order.technician && order.technician.toLowerCase().includes(query)),
+      );
+    }
+
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
+
+    setFilteredOrders(filtered);
+  }, [orders, searchQuery, activeTab, sortOrder]);
+
+  const loadOrders = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (res.ok) {
+        const payload = (await res.json()) as { orders: Order[]; count: number };
+        setOrders(payload.orders);
+        setFilteredOrders(payload.orders);
       }
-      return true;
-    })
-    .filter((order) => {
-      if (statusFilter !== 'ALL') {
-        return order.status === statusFilter;
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+      setError('Failed to load orders. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const refreshOrders = async () => {
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (res.ok) {
+        const payload = (await res.json()) as { orders: Order[]; count: number };
+        setOrders(payload.orders);
+        setFilteredOrders(payload.orders);
       }
-      return true;
-    })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      toast.success('Orders refreshed', {
+        description: 'Your orders have been updated.',
+      });
+    } catch (err) {
+      console.error('Failed to refresh orders:', err);
+      toast.error('Refresh failed', {
+        description: 'Could not refresh orders. Please try again.',
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const toggleOrderExpand = (orderId: string) => {
+    setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId ? { ...order, status: 'CANCELLED' as OrderStatus } : order,
+        ),
+      );
+      toast.success('Order cancelled', {
+        description: 'Your order has been cancelled successfully.',
+      });
+    } catch (err) {
+      toast.error('Cancel failed', {
+        description: 'Could not cancel the order. Please try again.',
+      });
+    }
+  };
+
+  const getStatusColor = (status: OrderStatus) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-500';
+      case 'WAITING_APPROVAL':
+        return 'bg-orange-500';
+      case 'APPROVED':
+        return 'bg-blue-500';
+      case 'IN_PROGRESS':
+        return 'bg-purple-500';
+      case 'COMPLETED':
+        return 'bg-green-500';
+      case 'REJECTED':
+        return 'bg-red-500';
+      case 'CANCELLED':
+        return 'bg-gray-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusBadge = (status: OrderStatus) => {
+    const statusConfig = {
+      PENDING: { icon: Clock, label: 'Pending', variant: 'outline' as const },
+      WAITING_APPROVAL: {
+        icon: AlertTriangle,
+        label: 'Waiting Approval',
+        variant: 'outline' as const,
+      },
+      APPROVED: { icon: ThumbsUp, label: 'Approved', variant: 'outline' as const },
+      IN_PROGRESS: { icon: Hammer, label: 'In Progress', variant: 'outline' as const },
+      COMPLETED: { icon: CheckCircle2, label: 'Completed', variant: 'default' as const },
+      REJECTED: { icon: XCircle, label: 'Rejected', variant: 'destructive' as const },
+      CANCELLED: { icon: XCircle, label: 'Cancelled', variant: 'secondary' as const },
+    };
+
+    const config = statusConfig[status] || statusConfig['PENDING'];
+    const Icon = config.icon;
+
+    return (
+      <Badge variant={config.variant} className="gap-1">
+        <Icon className="h-3 w-3" />
+        {config.label}
+      </Badge>
+    );
+  };
+
+  const getStatusIcon = (status: OrderStatus) => {
+    switch (status) {
+      case 'PENDING':
+        return <Clock className="h-4 w-4" />;
+      case 'WAITING_APPROVAL':
+        return <AlertTriangle className="h-4 w-4" />;
+      case 'APPROVED':
+        return <ThumbsUp className="h-4 w-4" />;
+      case 'IN_PROGRESS':
+        return <Hammer className="h-4 w-4" />;
+      case 'COMPLETED':
+        return <CheckCircle2 className="h-4 w-4" />;
+      case 'REJECTED':
+        return <XCircle className="h-4 w-4" />;
+      case 'CANCELLED':
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.3 },
+    },
+    exit: {
+      opacity: 0,
+      x: -100,
+      transition: { duration: 0.3 },
+    },
+  };
+
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <div className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">My Orders</h1>
+        </div>
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-4 w-1/4" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="space-y-6">
-          
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Link
-                href="/dashboard"
-                className="text-primary hover:text-primary/90 mr-4 flex items-center gap-2 transition-colors">
-                <ArrowLeft className="h-4 w-4" />
-                <span className="text-sm font-medium">Back to Dashboard</span>
-              </Link>
-              <h1 className="text-2xl font-bold tracking-tight">Order History</h1>
-            </div>
-            <Button asChild>
-              <Link href="/order">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                <span>New Order</span>
-              </Link>
-            </Button>
+    <DashboardLayout>
+      <div className="mb-6 flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+        <div className="flex items-center gap-3">
+          <Package className="text-primary h-6 w-6" />
+          <h1 className="text-3xl font-bold tracking-tight">My Orders</h1>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative">
+            <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
+            <Input
+              placeholder="Search orders..."
+              className="pl-8 sm:w-[250px]"
+              value={searchQuery}
+              onChange={handleSearch}
+            />
           </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Filter className="h-4 w-4" />
+                <span>Sort</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuCheckboxItem
+                checked={sortOrder === 'newest'}
+                onCheckedChange={() => setSortOrder('newest')}>
+                Newest first
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={sortOrder === 'oldest'}
+                onCheckedChange={() => setSortOrder('oldest')}>
+                Oldest first
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={refreshOrders}
+            disabled={isRefreshing || isLoading}>
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <span>{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
+          </Button>
+          <Button className="gap-2" onClick={() => router.push('/dashboard/orders/create')}>
+            <PlusCircle className="h-4 w-4" />
+            <span>New Order</span>
+          </Button>
+        </div>
+      </div>
 
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Card key={i} className="animate-pulse">
-                    <CardHeader className="pb-2">
-                      <div className="h-6 w-32 rounded bg-muted"></div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-4 w-full rounded bg-muted"></div>
-                      <div className="mt-2 h-4 w-2/3 rounded bg-muted"></div>
-                    </CardContent>
-                    <CardFooter>
-                      <div className="h-6 w-20 rounded bg-muted"></div>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            ) : filteredOrders.length === 0 ? (
-              <Card className="flex flex-col items-center justify-center p-8 text-center">
-                <ClipboardList className="h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-medium">No orders found</h3>
-                <p className="text-muted-foreground text-sm">
-                  {searchQuery || statusFilter !== 'ALL'
-                    ? 'Try adjusting your filters'
-                    : 'Start by creating your first repair order'}
-                </p>
-                {!searchQuery && statusFilter === 'ALL' && (
-                  <Button asChild className="mt-4">
-                    <Link href="/order">Create New Order</Link>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab} className="mt-6">
+          {isLoading ? (
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Card key={i}>
+                  <CardHeader className="pb-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-16 w-full" />
+                  </CardContent>
+                  <CardFooter>
+                    <Skeleton className="h-4 w-1/4" />
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : error ? (
+            <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30">
+              <CardContent className="pt-6">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <AlertTriangle className="mb-2 h-10 w-10 text-red-500" />
+                  <h3 className="mb-1 text-lg font-medium">Error Loading Orders</h3>
+                  <p className="text-muted-foreground mb-4 text-sm">{error}</p>
+                  <Button onClick={loadOrders}>Try Again</Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : filteredOrders.length === 0 ? (
+            <EmptyState
+              icon={Package}
+              title={searchQuery ? 'No matching orders' : 'No orders found'}
+              description={
+                searchQuery
+                  ? 'Try adjusting your search or filters'
+                  : "You don't have any orders yet. Place a repair request to get started."
+              }
+              action={
+                searchQuery ? (
+                  <Button variant="outline" onClick={() => setSearchQuery('')}>
+                    Clear Search
                   </Button>
-                )}
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                ) : (
+                  <Button onClick={() => router.push('/dashboard/orders/create')}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Create New Order
+                  </Button>
+                )
+              }
+            />
+          ) : (
+            <motion.div
+              className="space-y-4"
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              exit="hidden">
+              <AnimatePresence>
                 {filteredOrders.map((order) => (
-                  <Card key={order.id} className="h-full overflow-hidden transition-all hover:shadow-md">
-                    <Link
-                      href={`/order-details/${order.id}`}
-                      className="block h-full w-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        alert(`Navigating to order details: ${order.id}`);
-                      }}>
-                      <CardHeader className="pb-2">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <CardTitle className="text-lg">{order.itemName}</CardTitle>
-                          <Badge
-                            variant="outline"
-                            className={`flex w-fit items-center gap-1 px-2 py-1 ${getStatusColor(order.status)}`}>
-                            {getStatusIcon(order.status)}
-                            <span>{order.status.replace('_', ' ')}</span>
-                          </Badge>
+                  <motion.div
+                    key={order.id}
+                    variants={itemVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    layout>
+                    <Card className="group overflow-hidden py-0 transition-all hover:shadow-md">
+                      <CardHeader className="pt-6 pb-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`h-2 w-2 rounded-full ${getStatusColor(order.status)}`}
+                            />
+                            <CardTitle className="text-lg">{order.itemName}</CardTitle>
+                          </div>
+                          {getStatusBadge(order.status)}
                         </div>
-                        <p className="text-xs text-muted-foreground">Order ID: {order.id}</p>
+                        <CardDescription className="flex items-center justify-between">
+                          <span>{order.repairDetails}</span>
+                          <span className="font-mono text-xs">{order.id}</span>
+                        </CardDescription>
                       </CardHeader>
-                      <CardContent>
-                        <p className="text-muted-foreground line-clamp-2 text-sm">{order.repairDetails}</p>
-                        <div className="my-3 h-px w-full bg-border" />
-                        <div className="flex flex-col gap-2 text-sm">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-3.5 w-3.5" />
-                            <span>Service Date: {order.serviceDate}</span>
+                      <CardContent className="pb-2">
+                        <div className="grid gap-2 text-sm">
+                          <div className="text-muted-foreground flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            <span>Service Date: {format(new Date(order.serviceDate), 'PPP')}</span>
                           </div>
                           {order.technician && (
-                            <p className="text-muted-foreground text-sm">
-                              Technician: {order.technician}
-                            </p>
+                            <div className="text-muted-foreground flex items-center gap-2">
+                              <span>Technician: {order.technician}</span>
+                            </div>
                           )}
-                          <p className="font-medium">
+                          <div className="font-medium">
                             {order.finalPrice
                               ? `Final Price: $${order.finalPrice}`
                               : order.estimatedPrice
-                              ? `Est. Price: $${order.estimatedPrice}`
-                              : 'Price pending'}
-                          </p>
+                                ? `Est. Price: $${order.estimatedPrice}`
+                                : 'Price pending'}
+                          </div>
                         </div>
                       </CardContent>
-                      <CardFooter className="flex justify-between pt-2">
-                        <Button variant="outline" size="sm">
-                          View Details
-                        </Button>
-                        {(order.status === 'PENDING' || order.status === 'WAITING_APPROVAL') && (
+                      <CardFooter className="bg-muted/50 flex items-center justify-between border-t px-6 py-3 pb-6">
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4" />
+                          <span>{format(new Date(order.createdAt), 'PPP')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              toast.info('Order details', {
+                                description: `Viewing details for order ${order.id}`,
+                              })
+                            }>
+                            View Details
+                          </Button>
+                          {(order.status === 'PENDING' || order.status === 'WAITING_APPROVAL') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => handleCancelOrder(order.id)}>
+                              Cancel
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              alert(`Cancel order: ${order.id}`);
-                            }}>
-                            Cancel
+                            size="icon"
+                            onClick={() => toggleOrderExpand(order.id)}
+                            aria-label={
+                              expandedOrderId === order.id ? 'Collapse details' : 'Expand details'
+                            }>
+                            {expandedOrderId === order.id ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
                           </Button>
-                        )}
+                        </div>
                       </CardFooter>
-                    </Link>
-                  </Card>
+
+                      {/* Expanded details */}
+                      <AnimatePresence>
+                        {expandedOrderId === order.id && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="overflow-hidden border-t">
+                            <div className="bg-muted/30 p-4">
+                              <div className="grid gap-4 md:grid-cols-2">
+                                <div>
+                                  <h4 className="mb-2 text-sm font-medium">Order Details</h4>
+                                  <dl className="grid grid-cols-2 gap-1 text-sm">
+                                    <dt className="text-muted-foreground">Order ID:</dt>
+                                    <dd className="font-mono">{order.id}</dd>
+                                    <dt className="text-muted-foreground">Created:</dt>
+                                    <dd>{format(new Date(order.createdAt), 'PPP')}</dd>
+                                    <dt className="text-muted-foreground">Service Date:</dt>
+                                    <dd>{format(new Date(order.serviceDate), 'PPP')}</dd>
+                                    <dt className="text-muted-foreground">Status:</dt>
+                                    <dd>{getStatusBadge(order.status)}</dd>
+                                  </dl>
+                                </div>
+                                <div>
+                                  <h4 className="mb-2 text-sm font-medium">Repair Information</h4>
+                                  <div className="space-y-2 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground">Item:</span>
+                                      <p className="font-medium">{order.itemName}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Details:</span>
+                                      <p>{order.repairDetails}</p>
+                                    </div>
+                                    {order.technician && (
+                                      <div>
+                                        <span className="text-muted-foreground">Technician:</span>
+                                        <p className="font-medium">{order.technician}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="mt-4 flex flex-wrap gap-2">
+                                {order.technician && (
+                                  <Button variant="outline" size="sm" className="gap-2">
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span>Contact Technician</span>
+                                  </Button>
+                                )}
+                                <Button variant="outline" size="sm" className="gap-2">
+                                  <FileText className="h-4 w-4" />
+                                  <span>View Invoice</span>
+                                </Button>
+                                {order.status === 'COMPLETED' && (
+                                  <Button size="sm" className="gap-2">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    <span>Leave Review</span>
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </Card>
+                  </motion.div>
                 ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </TabsContent>
+      </Tabs>
+    </DashboardLayout>
   );
 }
