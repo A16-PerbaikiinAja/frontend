@@ -75,7 +75,7 @@ export default function CreateOrderPage() {
     paymentMethodId: '',
     couponId: '',
   });
-  
+
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -265,16 +265,16 @@ export default function CreateOrderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateStep3()) {
       toast.error('Please fill in all required fields');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
-      const orderData = {
+      const orderPayload = {
         itemName: formData.itemName,
         itemCondition: formData.itemCondition,
         repairDetails: formData.repairDetails,
@@ -282,19 +282,7 @@ export default function CreateOrderPage() {
         technicianId: formData.technicianId,
         paymentMethodId: formData.paymentMethodId,
         couponId: formData.couponId || null,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-    };
-
-    const orderPayload = {
-      itemName: formData.itemName,
-      itemCondition: formData.itemCondition,
-      repairDetails: formData.repairDetails,
-      serviceDate: formData.serviceDate,
-      technicianId: formData.technicianId,
-      paymentMethodId: formData.paymentMethodId,
-      couponId: formData.couponId || null,
-    };
+      };
 
       const token = localStorage.getItem('token');
       if (!token) {
