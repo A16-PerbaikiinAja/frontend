@@ -540,21 +540,13 @@ export default function OrdersPage() {
                           <span>{format(new Date(order.createdAt), 'PPP')}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              router.push(`/dashboard/orders/${order.id}`)
-                            }>
-                            View Details
-                          </Button>
                           {(order.status === 'PENDING' || order.status === 'WAITING_APPROVAL') && (
                             <>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  router.push(`/dashboard/orders/${order.id}/edit`)
+                                  router.push(`/dashboard/orders/${order.id}`)
                                 }
                                 className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors">
                                 <Edit3 className="h-4 w-4" />
