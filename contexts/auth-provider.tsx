@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL;
+console.log(API_URL)
 
 export type AuthContextType = {
   user: User | null;
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log(API_URL)
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
