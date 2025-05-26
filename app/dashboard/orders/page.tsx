@@ -601,57 +601,24 @@ export default function OrdersPage() {
                                 </div>
 
                                 {/* Order Information */}
-                                <div className="grid gap-6 md:grid-cols-2">
-                                  <div className="space-y-4">
-                                    <h4 className="text-sm font-semibold text-primary">Order Information</h4>
-                                    <div className="space-y-3 text-sm">
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Item:</span>
-                                        <p className="font-medium mt-1">{order.itemName}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Condition:</span>
-                                        <p className="mt-1">{order.itemCondition}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Repair Details:</span>
-                                        <p className="mt-1">{order.repairDetails}</p>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground font-medium">Status:</span>
-                                        <div className="mt-1">{getStatusBadge(order.status)}</div>
-                                      </div>
+                                <div className="space-y-4">
+                                  <h4 className="text-sm font-semibold text-primary">Order Information</h4>
+                                  <div className="space-y-3 text-sm">
+                                    <div>
+                                      <span className="text-muted-foreground font-medium">Item:</span>
+                                      <p className="font-medium mt-1">{order.itemName}</p>
                                     </div>
-                                  </div>
-
-                                  <div className="space-y-4">
-                                    <h4 className="text-sm font-semibold text-primary">Service Details</h4>
-                                    <div className="space-y-3 text-sm">
-                                      {order.estimatedCompletionTime && (
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Est. Completion:</span>
-                                          <p className="mt-1">{order.estimatedCompletionTime}</p>
-                                        </div>
-                                      )}
-                                      {(order.estimatedPrice || order.finalPrice) && (
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Pricing:</span>
-                                          <div className="mt-1 space-y-1">
-                                            {order.estimatedPrice && (
-                                              <p>Est. Price: <span className="font-medium">{formatPrice(order.estimatedPrice)}</span></p>
-                                            )}
-                                            {order.finalPrice && (
-                                              <p>Final Price: <span className="font-medium">{formatPrice(order.finalPrice)}</span></p>
-                                            )}
-                                          </div>
-                                        </div>
-                                      )}
-                                      {order.couponId && (
-                                        <div>
-                                          <span className="text-muted-foreground font-medium">Coupon:</span>
-                                          <p className="font-mono mt-1">{order.couponId}</p>
-                                        </div>
-                                      )}
+                                    <div>
+                                      <span className="text-muted-foreground font-medium">Condition:</span>
+                                      <p className="mt-1">{order.itemCondition}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground font-medium">Repair Details:</span>
+                                      <p className="mt-1">{order.repairDetails}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground font-medium">Status:</span>
+                                      <div className="mt-1">{getStatusBadge(order.status)}</div>
                                     </div>
                                   </div>
                                 </div>
@@ -683,14 +650,6 @@ export default function OrdersPage() {
                                 {/* Action Buttons */}
                                 <div className="border-t pt-4">
                                   <div className="flex flex-wrap gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => router.push(`/dashboard/orders/${order.id}`)}
-                                      className="gap-2">
-                                      <FileText className="h-4 w-4" />
-                                      Full Details
-                                    </Button>
                                     {order.status === 'COMPLETED' && (
                                       <Button size="sm" className="gap-2">
                                         <CheckCircle2 className="h-4 w-4" />
