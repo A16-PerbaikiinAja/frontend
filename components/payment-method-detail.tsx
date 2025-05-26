@@ -26,7 +26,7 @@ interface PaymentMethodDetailData {
   description?: string
   processingFee?: number
   paymentMethod: string
-  createdBy?: string
+  // createdBy?: string
   createdAt?: string
   updatedAt?: string
   deletedAt?: string | null
@@ -55,7 +55,7 @@ export default function PaymentMethodDetail({ id, isAdmin = true }: PaymentMetho
   const fetchPaymentMethod = async () => {
     try {
       setLoading(true)
-      const endpoint = isAdmin ? `/dashboard/payment-methods/admin/${id}` : `/dashboard/payment-methods/active/${id}`
+      const endpoint = isAdmin ? `/payment-methods/admin/${id}` : `/payment-methods/active/${id}`
 
       const response = await apiRequest<PaymentMethodDetailData>(endpoint)
       setPaymentMethod(response.data)
@@ -90,26 +90,26 @@ export default function PaymentMethodDetail({ id, isAdmin = true }: PaymentMetho
     }
   }
 
-  const handleReactivate = async () => {
-    if (!paymentMethod) return
+  // const handleReactivate = async () => {
+  //   if (!paymentMethod) return
 
-    try {
-      await apiRequest(`/payment-methods/admin/${id}/activate`, {
-        method: "PATCH",
-      })
+  //   try {
+  //     await apiRequest(`/payment-methods/admin/${id}/activate`, {
+  //       method: "PATCH",
+  //     })
 
-      setPaymentMethod({ ...paymentMethod, deletedAt: null })
+  //     setPaymentMethod({ ...paymentMethod, deletedAt: null })
 
-      toast.success("Metode pembayaran berhasil diaktifkan kembali", {
-        description: "Metode pembayaran telah diaktifkan kembali",
-      })
-    } catch (error: any) {
-      console.error("Error reactivating payment method:", error)
-      toast.error("Gagal mengaktifkan metode pembayaran", {
-        description: error.message || "Terjadi kesalahan saat mengaktifkan metode pembayaran",
-      })
-    }
-  }
+  //     toast.success("Metode pembayaran berhasil diaktifkan kembali", {
+  //       description: "Metode pembayaran telah diaktifkan kembali",
+  //     })
+  //   } catch (error: any) {
+  //     console.error("Error reactivating payment method:", error)
+  //     toast.error("Gagal mengaktifkan metode pembayaran", {
+  //       description: error.message || "Terjadi kesalahan saat mengaktifkan metode pembayaran",
+  //     })
+  //   }
+  // }
 
   if (loading) {
     return (
@@ -217,7 +217,7 @@ export default function PaymentMethodDetail({ id, isAdmin = true }: PaymentMetho
 
   return (
     <>
-      {isAdmin && (
+      {/* {isAdmin && (
         <div className="flex justify-end gap-2 mb-4">
           {paymentMethod.deletedAt === null ? (
             <>
@@ -257,7 +257,8 @@ export default function PaymentMethodDetail({ id, isAdmin = true }: PaymentMetho
                 </AlertDialogContent>
               </AlertDialog>
             </>
-          ) : (
+          ) 
+          : (
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -285,7 +286,7 @@ export default function PaymentMethodDetail({ id, isAdmin = true }: PaymentMetho
             </AlertDialog>
           )}
         </div>
-      )}
+      )} */}
 
       <Card>
         <CardContent className="p-6">
@@ -310,13 +311,13 @@ export default function PaymentMethodDetail({ id, isAdmin = true }: PaymentMetho
                 </Badge>
               </div>
             </div>
-            {isAdmin && (
+            {/* {isAdmin && (
               <Badge
                 className={`${paymentMethod.deletedAt === null ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300" : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"}`}
               >
                 {paymentMethod.deletedAt === null ? "Aktif" : "Tidak Aktif"}
               </Badge>
-            )}
+            )} */}
           </div>
 
           {paymentMethod.description && (

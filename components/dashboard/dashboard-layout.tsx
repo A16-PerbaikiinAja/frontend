@@ -17,6 +17,7 @@ import {
   Users,
   Wrench,
   X,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -42,7 +43,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function  DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -73,7 +74,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
-    { href: '/dashboard/payments-methods/active', label: 'Payment Methods', icon: CreditCard }
+    { href: '/dashboard/payment-methods/active', label: 'Payment Methods', icon: CreditCard }
   ];
 
   const technicianNavItems = [
@@ -91,7 +92,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reports', label: 'Reports', icon: Star },
     { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
-    { href: '/dashboard/payments-methods/admin', label: 'Payment Methods', icon: CreditCard },
+    { href: '/dashboard/payment-methods/admin', label: 'Payment Methods', icon: CreditCard },
+    { href: '/dashboard/payment-methods/admin/details-with-counts', label: 'Statistik Pembayaran', icon: TrendingUp },
   ];
 
   const navItems =

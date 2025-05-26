@@ -1,32 +1,19 @@
-"use client"
-
 import PaymentMethodDetail from "@/components/payment-method-detail"
 import BackButton from "@/components/back-button"
-import { useAuth } from "@/contexts/auth-provider";
-import { redirect } from "next/navigation"
-import { LoadingScreen } from "@/components/dashboard/loading-screen";
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
+import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 
-export default async function UserPaymentMethodDetailPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ id: string }>
-}) {
-  const { id } = await params
-  const { user, isLoading } = useAuth();
+}
 
-  if (!isLoading && !user) {
-    redirect("/login");
-  }
-
-  if (isLoading) return <LoadingScreen />;
-  if (!user) return null;
+const UserPaymentMethodDetailPage = async ({ params }: Props) => {
+    const { id } = await params
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <BackButton fallbackHref="/payment-methods/active" />
+        <BackButton fallbackHref="/dashboard/payment-methods/active" />
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Detail Metode Pembayaran</h1>
           <p className="text-muted-foreground">Informasi metode pembayaran</p>
@@ -38,3 +25,5 @@ export default async function UserPaymentMethodDetailPage({
     </DashboardLayout>
   )
 }
+
+export default UserPaymentMethodDetailPage
