@@ -85,6 +85,16 @@ export default function CreateOrderPage() {
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(true);
+  const [couponPreviews, setCouponPreviews] = useState<Record<string, string>>({});
+
+  const ORDER_BASE_PRICE = 200000;
+
+  const formatRupiah = (num: number | string) => {
+    const parsed = typeof num === 'string' ? parseFloat(num) : num;
+    if (isNaN(parsed)) return 'NaN';
+    const rounded = Math.round(parsed);
+    return 'Rp' + rounded.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  };
 
   useEffect(() => {
     if (!authLoading) {
@@ -92,8 +102,19 @@ export default function CreateOrderPage() {
         router.push('/login');
       } else {
         fetchTechnicians();
+
         fetchPayments();
-        fetchCoupons();
+
+        fetchCoupons().then((coupons) => {
+          setCoupons(coupons);
+          coupons.forEach(async (coupon) => {
+            const discount = await fetchCouponPreview(coupon.id);
+            setCouponPreviews((prev) => ({
+              ...prev,
+              [coupon.id]: discount,
+            }));
+          });
+        });
       }
     }
   }, [user, authLoading, router]);
@@ -173,7 +194,7 @@ export default function CreateOrderPage() {
     }
   };
 
-  const fetchCoupons = async (): Promise<void> => {
+  const fetchCoupons = async (): Promise<Coupon[]> => {
     setIsLoadingCoupons(true);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/coupons/valid`, {
@@ -184,20 +205,43 @@ export default function CreateOrderPage() {
         throw new Error(`Failed to fetch coupons (HTTP ${response.status})`);
       }
 
-      const { coupons }: { coupons: Coupon[]; message?: string } = await response.json();
+      const { coupons }: { coupons: Coupon[] } = await response.json();
 
       if (!Array.isArray(coupons)) {
-        throw new Error('Invalid response format: expected coupons array');
+        throw new Error('Invalid response format');
       }
 
-      setCoupons(coupons);
-    } catch (err: unknown) {
+      return coupons;
+    } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      toast.error('Failed to load coupons', {
-        description: message,
-      });
+      toast.error('Failed to load coupons', { description: message });
+      return [];
     } finally {
       setIsLoadingCoupons(false);
+    }
+  };
+
+  const fetchCouponPreview = async (couponId: string): Promise<number> => {
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_ORDER_API_URL}/coupons/${couponId}/preview`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ original_price: ORDER_BASE_PRICE }),
+        },
+      );
+
+      if (!res.ok) throw new Error('Failed to preview coupon');
+
+      const data = await res.json();
+      return data.discounted_price;
+    } catch (err) {
+      console.error(err);
+      return ORDER_BASE_PRICE;
     }
   };
 
@@ -806,6 +850,12 @@ export default function CreateOrderPage() {
                                           <p className="text-muted-foreground text-xs">
                                             Expires on:{' '}
                                             {new Date(coupon.end_date).toLocaleDateString()}
+                                          </p>
+                                          <p className="text-sm text-green-600">
+                                            Discounted Price:{' '}
+                                            {couponPreviews[coupon.id] != null
+                                              ? formatRupiah(couponPreviews[coupon.id])
+                                              : 'Loading...'}
                                           </p>
                                         </div>
                                       </div>
