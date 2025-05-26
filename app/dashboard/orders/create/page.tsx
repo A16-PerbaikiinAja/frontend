@@ -89,34 +89,6 @@ export default function CreateOrderPage() {
 
   const ORDER_BASE_PRICE = 200000;
 
-  //DUMMY TECHNICIANS
-  const dummyTechnicians: Technician[] = [
-    {
-      id: 'tech-001',
-      name: 'Alice Pratama',
-      imageUrl: 'https://randomuser.me/api/portraits/women/21.jpg',
-      specialty: 'Smartphone Repair',
-      rating: 4.8,
-      reviews: 120,
-    },
-    {
-      id: 'tech-002',
-      name: 'Budi Santosa',
-      imageUrl: 'https://randomuser.me/api/portraits/men/45.jpg',
-      specialty: 'Laptop Specialist',
-      rating: 4.6,
-      reviews: 98,
-    },
-    {
-      id: 'tech-003',
-      name: 'Citra Dewi',
-      imageUrl: 'https://randomuser.me/api/portraits/women/32.jpg',
-      specialty: 'Home Appliance',
-      rating: 4.9,
-      reviews: 150,
-    },
-  ];
-
   const formatRupiah = (num: number | string) => {
     const parsed = typeof num === 'string' ? parseFloat(num) : num;
     if (isNaN(parsed)) return 'NaN';
@@ -129,9 +101,7 @@ export default function CreateOrderPage() {
       if (!user) {
         router.push('/login');
       } else {
-        // fetchTechnicians();
-        setTechnicians(dummyTechnicians); // DUMMY TECHNICIANS
-        setIsLoadingTechnicians(false);
+        fetchTechnicians();
 
         fetchPayments();
 
