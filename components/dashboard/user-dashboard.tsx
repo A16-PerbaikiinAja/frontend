@@ -11,11 +11,14 @@ import {
   PenToolIcon as Tool,
   Wrench,
   Trash2,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
+import { format, parseISO } from 'date-fns';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -30,57 +33,43 @@ import {
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import type { NormalUser } from '@/types/auth';
 
 interface UserDashboardProps {
   user: NormalUser;
 }
 
+interface Order {
+  id: string;
+  customerId: string;
+  technicianId?: string | null;
+  itemName: string;
+  itemCondition: string;
+  repairDetails: string;
+  serviceDate: string;
+  status: 'PENDING' | 'WAITING_APPROVAL' | 'APPROVED' | 'IN_PROGRESS' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
+  paymentMethodId?: string | null;
+  couponId?: string | null;
+  estimatedCompletionTime?: string | null;
+  estimatedPrice?: number | null;
+  finalPrice?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
+}
+
+interface OrderListResponse {
+  orders: Order[];
+  count: number;
+}
+
 export function UserDashboard({ user }: UserDashboardProps) {
   const [activeTab, setActiveTab] = useState('orders');
-
-  // Mock data
-  const orders = [
-    {
-      id: 'ORD-1234',
-      item: 'iPhone 12 Pro',
-      issue: 'Screen replacement',
-      status: 'in-progress',
-      technician: {
-        name: 'David Wilson',
-        image: '/technicians/1.png',
-      },
-      price: 120,
-      progress: 65,
-      date: '2023-05-15',
-    },
-    {
-      id: 'ORD-1235',
-      item: 'MacBook Air',
-      issue: 'Battery replacement',
-      status: 'pending',
-      technician: {
-        name: 'Maria Rodriguez',
-        image: '/technicians/2.png',
-      },
-      price: 150,
-      progress: 20,
-      date: '2023-05-18',
-    },
-    {
-      id: 'ORD-1236',
-      item: 'Samsung TV',
-      issue: 'No power',
-      status: 'completed',
-      technician: {
-        name: 'James Lee',
-        image: '/technicians/3.png',
-      },
-      price: 85,
-      progress: 100,
-      date: '2023-05-10',
-    },
-  ];
+  
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+  const [ordersError, setOrdersError] = useState<string | null>(null);
 
   const coupons = [
     {
@@ -99,65 +88,60 @@ export function UserDashboard({ user }: UserDashboardProps) {
     },
   ];
 
-  const fadeInUp = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
-  };
-
-  const staggerContainer = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-500';
-      case 'in-progress':
-        return 'bg-blue-500';
-      case 'pending':
-        return 'bg-yellow-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
   const [userReviews, setUserReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(true);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchUserReviews = async () => {
-      setLoadingReviews(true);
-      try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review/user`, {
+  const fetchOrders = async () => {
+    setIsLoadingOrders(true);
+    setOrdersError(null);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders`,
+        {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token')}`,
           },
-        });
-        if (!res.ok) throw new Error('Failed to fetch reviews');
-        const data = await res.json();
-        setUserReviews(data);
-      } catch (err) {
-        toast.error('Failed fetching reviews');
-      } finally {
-        setLoadingReviews(false);
-      }
-    };
+        }
+      );
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data = (await res.json()) as OrderListResponse;
+      
+      console.log('Orders API Response:', data);
+      
+      setOrders(data.orders || []);
+    } catch (err) {
+      console.error('Failed to fetch orders:', err);
+      setOrdersError('Failed to load orders. Please try again.');
+      toast.error('Failed to load orders');
+    } finally {
+      setIsLoadingOrders(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
     fetchUserReviews();
   }, []);
+
+  const fetchUserReviews = async () => {
+    setLoadingReviews(true);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review/user`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch reviews');
+      const data = await res.json();
+      setUserReviews(data);
+    } catch (err) {
+      toast.error('Failed fetching reviews');
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this review?')) return;
@@ -183,6 +167,113 @@ export function UserDashboard({ user }: UserDashboardProps) {
   const goToEdit = (id: string) => {
     router.push(`/dashboard/reviews/edit/${id}`);
   };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'bg-yellow-500';
+      case 'WAITING_APPROVAL':
+        return 'bg-orange-500';
+      case 'IN_PROGRESS':
+        return 'bg-blue-500';
+      case 'COMPLETED':
+        return 'bg-green-500';
+      case 'REJECTED':
+        return 'bg-red-600';
+      case 'CANCELLED':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'outline';
+      case 'WAITING_APPROVAL':
+          return 'outline';
+      case 'APPROVED':
+        return 'default';
+      case 'IN_PROGRESS':
+        return 'secondary';
+      case 'COMPLETED':
+        return 'default';
+      case 'REJECTED':
+        return 'destructive';
+      case 'CANCELLED':
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 'Pending';
+      case 'WAITING_APPROVAL':
+        return 'Waiting Approval';
+      case 'APPROVED':
+        return 'Approved';
+      case 'IN_PROGRESS':
+        return 'In Progress';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'REJECTED':
+        return 'Rejected';
+      case 'CANCELLED':
+        return 'Cancelled';
+      default:
+        return status;
+    }
+  };
+
+  const getProgress = (status: string) => {
+    switch (status) {
+      case 'PENDING':
+        return 10;
+      case 'WAITING_APPROVAL':
+        return 25;
+      case 'APPROVED':
+        return 40;
+      case 'IN_PROGRESS':
+        return 70;
+      case 'COMPLETED':
+        return 100;
+      case 'REJECTED':
+        return 0;
+      case 'CANCELLED':
+        return 0;
+      default:
+        return 5;
+    }
+  };
+
+  const fadeInUp = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.5,
+      },
+    },
+  };
+
+  const staggerContainer = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const activeOrders = orders.filter((o) => 
+    !['COMPLETED', 'CANCELLED'].includes(o.status)
+  );
 
   return (
     <motion.div
@@ -210,9 +301,11 @@ export function UserDashboard({ user }: UserDashboardProps) {
               Need something fixed? Submit a new repair request and get matched with a skilled
               technician.
             </p>
-            <Button className="w-full gap-2">
-              <Plus className="h-4 w-4" />
-              <Link href="/dashboard/orders/create">New Request</Link>
+            <Button className="w-full gap-2" asChild>
+              <Link href="/dashboard/orders/create">
+                <Plus className="h-4 w-4" />
+                New Request
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -224,22 +317,45 @@ export function UserDashboard({ user }: UserDashboardProps) {
               <span>Active Orders</span>
             </CardTitle>
             <CardDescription>
-              You have {orders.filter((o) => o.status !== 'completed').length} active repair orders
+              {isLoadingOrders ? (
+                <Skeleton className="h-4 w-32" />
+              ) : (
+                `You have ${activeOrders.length} active repair orders`
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-2">
-              {orders
-                .filter((o) => o.status !== 'completed')
-                .slice(0, 2)
-                .map((order) => (
-                  <div key={order.id} className="flex items-center gap-2">
-                    <div className={`h-2 w-2 rounded-full ${getStatusColor(order.status)}`} />
-                    <span className="flex-1 truncate text-sm">{order.item}</span>
-                    <Badge variant="outline">{order.status}</Badge>
+            {isLoadingOrders ? (
+              <div className="space-y-2">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-2 w-2 rounded-full" />
+                    <Skeleton className="h-4 flex-1" />
+                    <Skeleton className="h-5 w-16" />
                   </div>
                 ))}
-            </div>
+              </div>
+            ) : ordersError ? (
+              <div className="flex items-center gap-2 text-red-500">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm">Failed to load</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {activeOrders.slice(0, 2).map((order) => (
+                  <div key={order.id} className="flex items-center gap-2">
+                    <div className={`h-2 w-2 rounded-full ${getStatusColor(order.status)}`} />
+                    <span className="flex-1 truncate text-sm">{order.itemName}</span>
+                    <Badge variant={getStatusBadgeVariant(order.status)}>
+                      {getStatusLabel(order.status)}
+                    </Badge>
+                  </div>
+                ))}
+                {activeOrders.length === 0 && (
+                  <p className="text-sm text-muted-foreground">No active orders</p>
+                )}
+              </div>
+            )}
           </CardContent>
           <CardFooter>
             <Button variant="ghost" size="sm" className="w-full gap-1" asChild>
@@ -306,65 +422,148 @@ export function UserDashboard({ user }: UserDashboardProps) {
           </TabsList>
 
           <TabsContent value="orders" className="mt-6 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {orders.map((order) => (
-                <motion.div
-                  key={order.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="group">
-                  <Card className="overflow-hidden transition-all hover:shadow-md">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Your Repair Orders</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={fetchOrders}
+                disabled={isLoadingOrders}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingOrders ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+
+            {isLoadingOrders ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {[...Array(3)].map((_, i) => (
+                  <Card key={i}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg">{order.item}</CardTitle>
-                        <Badge
-                          variant={
-                            order.status === 'completed'
-                              ? 'default'
-                              : order.status === 'in-progress'
-                                ? 'secondary'
-                                : 'outline'
-                          }>
-                          {order.status === 'in-progress'
-                            ? 'In Progress'
-                            : order.status === 'completed'
-                              ? 'Completed'
-                              : 'Pending'}
-                        </Badge>
+                        <Skeleton className="h-5 w-24" />
+                        <Skeleton className="h-5 w-16" />
                       </div>
-                      <CardDescription>{order.issue}</CardDescription>
+                      <Skeleton className="h-4 w-32" />
                     </CardHeader>
                     <CardContent className="pb-2">
                       <div className="mb-4 flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage
-                            src={order.technician.image || '/placeholder.svg'}
-                            alt={order.technician.name}
-                          />
-                          <AvatarFallback>{order.technician.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm">{order.technician.name}</span>
+                        <Skeleton className="h-6 w-6 rounded-full" />
+                        <Skeleton className="h-4 w-24" />
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Progress</span>
-                          <span className="font-medium">{order.progress}%</span>
+                        <div className="flex items-center justify-between">
+                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-3 w-8" />
                         </div>
-                        <Progress value={order.progress} className="h-2" />
+                        <Skeleton className="h-2 w-full" />
                       </div>
                     </CardContent>
-                    <CardFooter className="bg-muted/50 flex items-center justify-between border-t px-6 py-3">
-                      <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4" />
-                        <span>{order.date}</span>
-                      </div>
-                      <div className="font-medium">${order.price}</div>
+                    <CardFooter className="bg-muted/50 border-t px-6 py-3">
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-12 ml-auto" />
                     </CardFooter>
                   </Card>
-                </motion.div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : ordersError ? (
+              <Card className="border-red-200 bg-red-50">
+                <CardContent className="pt-6">
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <AlertCircle className="mb-2 h-10 w-10 text-red-500" />
+                    <h3 className="mb-1 text-lg font-medium">Error Loading Orders</h3>
+                    <p className="text-sm mb-4">{ordersError}</p>
+                    <Button onClick={fetchOrders}>Try Again</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : orders.length === 0 ? (
+              <Card className="flex flex-col items-center justify-center p-12 text-center">
+                <div className="bg-primary/10 mb-4 rounded-full p-3">
+                  <Wrench className="text-primary h-8 w-8" />
+                </div>
+                <h3 className="mb-2 text-xl font-medium">No Orders Yet</h3>
+                <p className="text-muted-foreground mb-6 text-sm">
+                  Start your first repair request to see your orders here.
+                </p>
+                <Button asChild>
+                  <Link href="/dashboard/orders/create">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create First Order
+                  </Link>
+                </Button>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {orders.map((order) => (
+                  <motion.div
+                    key={order.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="group">
+                    <Card className="overflow-hidden transition-all hover:shadow-md">
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-lg">{order.itemName}</CardTitle>
+                          <Badge variant={getStatusBadgeVariant(order.status)}>
+                            {getStatusLabel(order.status)}
+                          </Badge>
+                        </div>
+                        <CardDescription>{order.repairDetails}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="pb-2">
+                        <div className="mb-4 flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage
+                              src="/placeholder.svg"
+                              alt="Technician"
+                            />
+                            <AvatarFallback>T</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm">
+                            {order.technicianId ? 
+                              `Technician ID: ${order.technicianId.slice(-8)}` : 
+                              'Assigning technician...'
+                            }
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Progress</span>
+                            <span className="font-medium">{getProgress(order.status)}%</span>
+                          </div>
+                          <Progress value={getProgress(order.status)} className="h-2" />
+                        </div>
+                      </CardContent>
+                      <CardFooter className="bg-muted/50 flex items-center justify-between border-t px-6 py-3">
+                        <div className="text-muted-foreground flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {format(new Date(order.createdAt), 'MMM dd, yyyy')}
+                          </span>
+                        </div>
+                        <div className="font-medium">
+                          {order.finalPrice ? 
+                            new Intl.NumberFormat('en-US', {
+                              style: 'currency',
+                              currency: 'USD'
+                            }).format(order.finalPrice) : 
+                            order.estimatedPrice ? 
+                              new Intl.NumberFormat('en-US', {
+                                style: 'currency', 
+                                currency: 'USD'
+                              }).format(order.estimatedPrice) : 
+                              'Pending'
+                          }
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+            
             <div className="flex justify-center">
               <Button variant="outline" asChild>
                 <Link href="/dashboard/orders">View All Orders</Link>
@@ -506,7 +705,7 @@ export function UserDashboard({ user }: UserDashboardProps) {
                 <p className="text-muted-foreground mb-4 text-sm">
                   Share your experience with our technicians and help others find the best service.
                 </p>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" asChild>
                   <Link href="/dashboard/reviews/create">Write a Review</Link>
                 </Button>
               </Card>

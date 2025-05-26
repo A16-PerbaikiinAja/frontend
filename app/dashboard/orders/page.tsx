@@ -14,13 +14,14 @@ import {
   FileText,
   Filter,
   Hammer,
-  MessageSquare,
   Package,
   PlusCircle,
   RefreshCw,
   Search,
   ThumbsUp,
   XCircle,
+  Edit3,
+  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -60,14 +61,21 @@ type OrderStatus =
 
 interface Order {
   id: string;
+  customerId: string;
+  technicianId?: string | null;
   itemName: string;
+  itemCondition: string;
   repairDetails: string;
   serviceDate: string;
   status: OrderStatus;
-  estimatedPrice?: number;
-  finalPrice?: number;
-  technician?: string;
+  paymentMethodId?: string | null;
+  couponId?: string | null;
+  estimatedCompletionTime?: string | null;
+  estimatedPrice?: number | null;
+  finalPrice?: number | null;
   createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
 }
 
 export default function OrdersPage() {
@@ -82,6 +90,9 @@ export default function OrdersPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
+  const [orderToCancel, setOrderToCancel] = useState<string | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -117,8 +128,7 @@ export default function OrdersPage() {
         (order) =>
           order.id.toLowerCase().includes(query) ||
           order.itemName.toLowerCase().includes(query) ||
-          order.repairDetails.toLowerCase().includes(query) ||
-          (order.technician && order.technician.toLowerCase().includes(query)),
+          order.repairDetails.toLowerCase().includes(query),
       );
     }
 
@@ -142,6 +152,8 @@ export default function OrdersPage() {
         const payload = (await res.json()) as { orders: Order[]; count: number };
         setOrders(payload.orders);
         setFilteredOrders(payload.orders);
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
     } catch (err) {
       console.error('Failed to fetch orders:', err);
@@ -162,10 +174,12 @@ export default function OrdersPage() {
         const payload = (await res.json()) as { orders: Order[]; count: number };
         setOrders(payload.orders);
         setFilteredOrders(payload.orders);
+        toast.success('Orders refreshed', {
+          description: 'Your orders have been updated.',
+        });
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
-      toast.success('Orders refreshed', {
-        description: 'Your orders have been updated.',
-      });
     } catch (err) {
       console.error('Failed to refresh orders:', err);
       toast.error('Refresh failed', {
@@ -184,21 +198,63 @@ export default function OrdersPage() {
     setExpandedOrderId(expandedOrderId === orderId ? null : orderId);
   };
 
-  const handleCancelOrder = async (orderId: string) => {
+  const openCancelConfirmation = (orderId: string) => {
+    setOrderToCancel(orderId);
+    setCancelConfirmOpen(true);
+  };
+
+  const closeCancelConfirmation = () => {
+    setOrderToCancel(null);
+    setCancelConfirmOpen(false);
+    setIsCancelling(false);
+  };
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && cancelConfirmOpen && !isCancelling) {
+        closeCancelConfirmation();
+      }
+    };
+
+    if (cancelConfirmOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [cancelConfirmOpen, isCancelling]);
+
+  const handleCancelOrder = async () => {
+    if (!orderToCancel) return;
+    
+    setIsCancelling(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === orderId ? { ...order, status: 'CANCELLED' as OrderStatus } : order,
-        ),
-      );
-      toast.success('Order cancelled', {
-        description: 'Your order has been cancelled successfully.',
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders/${orderToCancel}`, {
+        method: 'DELETE',
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
       });
+      
+      if (res.ok) {
+        setOrders((prev) => prev.filter((order) => order.id !== orderToCancel));
+        toast.success('Order cancelled', {
+          description: 'Your order has been cancelled successfully.',
+        });
+        closeCancelConfirmation();
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
     } catch (err) {
+      console.error('Failed to cancel order:', err);
       toast.error('Cancel failed', {
         description: 'Could not cancel the order. Please try again.',
       });
+      setIsCancelling(false);
     }
   };
 
@@ -249,25 +305,13 @@ export default function OrdersPage() {
     );
   };
 
-  const getStatusIcon = (status: OrderStatus) => {
-    switch (status) {
-      case 'PENDING':
-        return <Clock className="h-4 w-4" />;
-      case 'WAITING_APPROVAL':
-        return <AlertTriangle className="h-4 w-4" />;
-      case 'APPROVED':
-        return <ThumbsUp className="h-4 w-4" />;
-      case 'IN_PROGRESS':
-        return <Hammer className="h-4 w-4" />;
-      case 'COMPLETED':
-        return <CheckCircle2 className="h-4 w-4" />;
-      case 'REJECTED':
-        return <XCircle className="h-4 w-4" />;
-      case 'CANCELLED':
-        return <XCircle className="h-4 w-4" />;
-      default:
-        return <Clock className="h-4 w-4" />;
-    }
+  const formatPrice = (price: number | null | undefined) => {
+    if (price === null || price === undefined) return null;
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
   const containerVariants = {
@@ -335,7 +379,7 @@ export default function OrdersPage() {
           <div className="relative">
             <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
             <Input
-              placeholder="Search orders..."
+              placeholder="Search by order ID, item name, or repair details..."
               className="pl-8 sm:w-[250px]"
               value={searchQuery}
               onChange={handleSearch}
@@ -378,11 +422,14 @@ export default function OrdersPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="in-progress">In Progress</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="waiting-approval" className="hidden sm:flex">Waiting=</TabsTrigger>
+          <TabsTrigger value="approved" className="hidden lg:flex">Approved</TabsTrigger>
+          <TabsTrigger value="in-progress">Progress</TabsTrigger>
+          <TabsTrigger value="completed">Done</TabsTrigger>
+          <TabsTrigger value="rejected" className="hidden lg:flex">Rejected</TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>
 
@@ -475,16 +522,17 @@ export default function OrdersPage() {
                             <Calendar className="h-4 w-4" />
                             <span>Service Date: {format(new Date(order.serviceDate), 'PPP')}</span>
                           </div>
-                          {order.technician && (
+                          {order.estimatedCompletionTime && (
                             <div className="text-muted-foreground flex items-center gap-2">
-                              <span>Technician: {order.technician}</span>
+                              <Clock className="h-4 w-4" />
+                              <span>Est. Completion: {order.estimatedCompletionTime}</span>
                             </div>
                           )}
                           <div className="font-medium">
                             {order.finalPrice
-                              ? `Final Price: $${order.finalPrice}`
+                              ? `Final Price: ${formatPrice(order.finalPrice)}`
                               : order.estimatedPrice
-                                ? `Est. Price: $${order.estimatedPrice}`
+                                ? `Est. Price: ${formatPrice(order.estimatedPrice)}`
                                 : 'Price pending'}
                           </div>
                         </div>
@@ -495,24 +543,27 @@ export default function OrdersPage() {
                           <span>{format(new Date(order.createdAt), 'PPP')}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              toast.info('Order details', {
-                                description: `Viewing details for order ${order.id}`,
-                              })
-                            }>
-                            View Details
-                          </Button>
                           {(order.status === 'PENDING' || order.status === 'WAITING_APPROVAL') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleCancelOrder(order.id)}>
-                              Cancel
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  router.push(`/dashboard/orders/${order.id}/edit`)
+                                }
+                                className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors">
+                                <Edit3 className="h-4 w-4" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openCancelConfirmation(order.id)}
+                                className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-colors">
+                                <X className="h-4 w-4" />
+                                Cancel
+                              </Button>
+                            </>
                           )}
                           <Button
                             variant="ghost"
@@ -539,59 +590,115 @@ export default function OrdersPage() {
                             exit={{ height: 0, opacity: 0 }}
                             transition={{ duration: 0.3 }}
                             className="overflow-hidden border-t">
-                            <div className="bg-muted/30 p-4">
-                              <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                  <h4 className="mb-2 text-sm font-medium">Order Details</h4>
-                                  <dl className="grid grid-cols-2 gap-1 text-sm">
-                                    <dt className="text-muted-foreground">Order ID:</dt>
-                                    <dd className="font-mono">{order.id}</dd>
-                                    <dt className="text-muted-foreground">Created:</dt>
-                                    <dd>{format(new Date(order.createdAt), 'PPP')}</dd>
-                                    <dt className="text-muted-foreground">Service Date:</dt>
-                                    <dd>{format(new Date(order.serviceDate), 'PPP')}</dd>
-                                    <dt className="text-muted-foreground">Status:</dt>
-                                    <dd>{getStatusBadge(order.status)}</dd>
-                                  </dl>
+                            <div className="bg-muted/30 p-6">
+                              <div className="space-y-6">
+                                {/* Order Summary */}
+                                <div className="border-b pb-4">
+                                  <h3 className="text-lg font-semibold mb-2">Order #{order.id}</h3>
+                                  <p className="text-muted-foreground">
+                                    Service Date: {format(new Date(order.serviceDate), 'PPPpp')}
+                                  </p>
                                 </div>
-                                <div>
-                                  <h4 className="mb-2 text-sm font-medium">Repair Information</h4>
-                                  <div className="space-y-2 text-sm">
-                                    <div>
-                                      <span className="text-muted-foreground">Item:</span>
-                                      <p className="font-medium">{order.itemName}</p>
-                                    </div>
-                                    <div>
-                                      <span className="text-muted-foreground">Details:</span>
-                                      <p>{order.repairDetails}</p>
-                                    </div>
-                                    {order.technician && (
+
+                                {/* Order Information */}
+                                <div className="grid gap-6 md:grid-cols-2">
+                                  <div className="space-y-4">
+                                    <h4 className="text-sm font-semibold text-primary">Order Information</h4>
+                                    <div className="space-y-3 text-sm">
                                       <div>
-                                        <span className="text-muted-foreground">Technician:</span>
-                                        <p className="font-medium">{order.technician}</p>
+                                        <span className="text-muted-foreground font-medium">Item:</span>
+                                        <p className="font-medium mt-1">{order.itemName}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Condition:</span>
+                                        <p className="mt-1">{order.itemCondition}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Repair Details:</span>
+                                        <p className="mt-1">{order.repairDetails}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Status:</span>
+                                        <div className="mt-1">{getStatusBadge(order.status)}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="space-y-4">
+                                    <h4 className="text-sm font-semibold text-primary">Service Details</h4>
+                                    <div className="space-y-3 text-sm">
+                                      {order.estimatedCompletionTime && (
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Est. Completion:</span>
+                                          <p className="mt-1">{order.estimatedCompletionTime}</p>
+                                        </div>
+                                      )}
+                                      {(order.estimatedPrice || order.finalPrice) && (
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Pricing:</span>
+                                          <div className="mt-1 space-y-1">
+                                            {order.estimatedPrice && (
+                                              <p>Est. Price: <span className="font-medium">{formatPrice(order.estimatedPrice)}</span></p>
+                                            )}
+                                            {order.finalPrice && (
+                                              <p>Final Price: <span className="font-medium">{formatPrice(order.finalPrice)}</span></p>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {order.couponId && (
+                                        <div>
+                                          <span className="text-muted-foreground font-medium">Coupon:</span>
+                                          <p className="font-mono mt-1">{order.couponId}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Timestamps */}
+                                <div className="border-t pt-4">
+                                  <h4 className="text-sm font-semibold text-primary mb-3">Timeline</h4>
+                                  <div className="grid gap-3 text-sm md:grid-cols-3">
+                                    <div>
+                                      <span className="text-muted-foreground font-medium">Created:</span>
+                                      <p className="mt-1">{format(new Date(order.createdAt), 'PPP')}</p>
+                                      <p className="text-xs text-muted-foreground">{format(new Date(order.createdAt), 'p')}</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground font-medium">Last Updated:</span>
+                                      <p className="mt-1">{format(new Date(order.updatedAt), 'PPP')}</p>
+                                      <p className="text-xs text-muted-foreground">{format(new Date(order.updatedAt), 'p')}</p>
+                                    </div>
+                                    {order.completedAt && (
+                                      <div>
+                                        <span className="text-muted-foreground font-medium">Completed:</span>
+                                        <p className="mt-1">{format(new Date(order.completedAt), 'PPP')}</p>
+                                        <p className="text-xs text-muted-foreground">{format(new Date(order.completedAt), 'p')}</p>
                                       </div>
                                     )}
                                   </div>
                                 </div>
-                              </div>
 
-                              <div className="mt-4 flex flex-wrap gap-2">
-                                {order.technician && (
-                                  <Button variant="outline" size="sm" className="gap-2">
-                                    <MessageSquare className="h-4 w-4" />
-                                    <span>Contact Technician</span>
-                                  </Button>
-                                )}
-                                <Button variant="outline" size="sm" className="gap-2">
-                                  <FileText className="h-4 w-4" />
-                                  <span>View Invoice</span>
-                                </Button>
-                                {order.status === 'COMPLETED' && (
-                                  <Button size="sm" className="gap-2">
-                                    <CheckCircle2 className="h-4 w-4" />
-                                    <span>Leave Review</span>
-                                  </Button>
-                                )}
+                                {/* Action Buttons */}
+                                <div className="border-t pt-4">
+                                  <div className="flex flex-wrap gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                                      className="gap-2">
+                                      <FileText className="h-4 w-4" />
+                                      Full Details
+                                    </Button>
+                                    {order.status === 'COMPLETED' && (
+                                      <Button size="sm" className="gap-2">
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        Leave Review
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </motion.div>
@@ -605,6 +712,84 @@ export default function OrdersPage() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Cancel Confirmation Modal */}
+      {cancelConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+
+          <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeCancelConfirmation}
+          />
+          
+          <Card className="relative z-10 w-full max-w-md mx-4 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                Cancel Order Confirmation
+              </CardTitle>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <p className="text-sm">Are you sure you want to cancel this order?</p>
+              
+              {orderToCancel && (
+                <div className="bg-muted p-3 rounded-md space-y-2">
+                  {(() => {
+                    const order = orders.find(o => o.id === orderToCancel);
+                    return order ? (
+                      <>
+                        <p className="text-sm">
+                          <span className="font-medium">Order ID:</span> 
+                          <span className="font-mono ml-1">{order.id}</span>
+                        </p>
+                        <p className="text-base">
+                          <span className="font-medium">Item:</span> 
+                          <span className="font-semibold ml-1">{order.itemName}</span>
+                        </p>
+                        <div className="text-sm flex items-center gap-2">
+                          <span className="font-medium">Status:</span>
+                          {getStatusBadge(order.status)}
+                        </div>
+                      </>
+                    ) : null;
+                  })()}
+                </div>
+              )}
+              
+              <p className="text-sm text-muted-foreground">
+                This action cannot be undone. The order will be permanently cancelled.
+              </p>
+            </CardContent>
+            
+            <CardFooter className="flex justify-end gap-2">
+              <Button 
+                variant="outline"
+                onClick={closeCancelConfirmation}
+                disabled={isCancelling}>
+                Keep Order
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleCancelOrder}
+                disabled={isCancelling}
+                className="gap-2">
+                {isCancelling ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <X className="h-4 w-4" />
+                    Yes, Cancel Order
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
