@@ -101,7 +101,7 @@ export default function EditOrderPage() {
 
       if (!['PENDING','WAITING_APPROVAL'].includes(data.status)) {
         toast.error('Order cannot be edited at this stage.');
-        return void router.push(`/dashboard/orders/${orderId}`);
+        return void router.push(`/dashboard/orders/`);
       }
 
       setOrder(data);
