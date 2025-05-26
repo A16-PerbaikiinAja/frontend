@@ -14,38 +14,43 @@ interface Review {
   id: string;
   userId: string;
   technicianId: string;
-  technicianFullName: string | null;
+  technicianFullName: string;
   comment: string;
   rating: number;
   createdAt: string;
+  owner: boolean;
 }
 
 const ReviewsPage: React.FC = () => {
   const router = useRouter();
-
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const { user } = useAuth?.() || { user: null };
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
-  const [editingIds, setEditingIds] = useState<string[]>([]);
 
   useEffect(() => {
-    if (user) setCurrentUserId(user.id);
-    else setCurrentUserId(localStorage.getItem('userId'));
     fetchReviews();
-  }, [user]);
+  }, []);
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
       setError(null);
       const reviewApiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review`;
-      const response = await fetch(reviewApiUrl);
+
+      const token = localStorage.getItem('token');
+
+      const requestOptions = {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      };
+
+      const response = await fetch(reviewApiUrl, requestOptions);
+
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
       const data: Review[] = await response.json();
       setReviews(data);
     } catch (err: any) {
@@ -68,13 +73,12 @@ const ReviewsPage: React.FC = () => {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
-
       if (!res.ok) throw new Error('Failed deleting review');
 
       setReviews((prev) => prev.filter((review) => review.id !== id));
       toast.success('Review deleted!');
     } catch (err: any) {
-      toast.error('Failed deleting revie');
+      toast.error('Failed deleting review');
     } finally {
       setDeletingIds((prev) => prev.filter((delId) => delId !== id));
     }
@@ -102,22 +106,21 @@ const ReviewsPage: React.FC = () => {
     return 'bg-red-100 text-red-800';
   };
 
-  if (loading)
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex min-h-64 items-center justify-center">
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <div className="mt-6 flex min-h-64 items-center justify-center">
           <div className="text-center">
             <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
             <p className="mt-4 text-gray-600">Loading Reviews...</p>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
 
-  if (error)
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex min-h-screen items-center justify-center">
+    if (error) {
+      return (
+        <div className="mt-6 flex min-h-64 items-center justify-center">
           <div className="text-center">
             <div className="mb-4 text-xl text-red-500">❌</div>
             <p className="font-medium text-red-600">Loading Reviews Failed!</p>
@@ -128,34 +131,21 @@ const ReviewsPage: React.FC = () => {
             </button>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
 
-  return (
-    <div className="container mx-auto mt-6 p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/dashboard"
-            className="text-primary hover:text-primary/90 mr-4 flex items-center gap-2 transition-colors">
-            <ArrowLeft className="h-4 w-4" />
-            <span className="text-sm font-medium">Back to Dashboard</span>
-          </Link>
-          <h1 className="text-2xl font-bold tracking-tight">Reviews</h1>
-        </div>
-        <Button asChild className="ml-auto">
-          <Link href="/dashboard/reviews/create">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            <span>New Review</span>
-          </Link>
-        </Button>
-      </div>
-      {reviews.length === 0 ? (
+    if (reviews.length === 0) {
+      return (
         <div className="py-12 text-center">
           <div className="mb-4 text-6xl text-gray-400">📝</div>
           <h3 className="mb-2 text-xl font-medium text-gray-900">There's no reviews yet</h3>
         </div>
-      ) : (
+      );
+    }
+
+    console.log(reviews);
+    return (
+      <>
         <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {reviews.map((review) => (
             <Card key={review.id} className="group transition-shadow hover:shadow-lg">
@@ -176,23 +166,20 @@ const ReviewsPage: React.FC = () => {
                     : ''}
                 </CardDescription>
               </CardHeader>
-
               <CardContent>
                 <div className="mb-2 flex items-center space-x-2">{renderStars(review.rating)}</div>
                 <blockquote className="mb-2 text-gray-700 italic">{review.comment}</blockquote>
               </CardContent>
-
               <div className="mx-4 my-2 border-t border-gray-200" />
-
               <CardFooter className="flex justify-between">
-                {(currentUserId ?? user?.id) === review.userId ? (
+                {review.owner ? (
                   <>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => goToEdit(review.id)}
-                      disabled={editingIds.includes(review.id) || deletingIds.includes(review.id)}>
-                      {editingIds.includes(review.id) ? 'Updating...' : 'Edit'}
+                      disabled={deletingIds.includes(review.id)}>
+                      Edit
                     </Button>
                     <Button
                       variant="ghost"
@@ -223,11 +210,34 @@ const ReviewsPage: React.FC = () => {
             </Card>
           ))}
         </div>
-      )}
+        {reviews.length > 0 && (
+          <div className="mt-8 text-center text-gray-600">Showing {reviews.length} reviews</div>
+        )}
+      </>
+    );
+  };
 
-      {reviews.length > 0 && (
-        <div className="mt-8 text-center text-gray-600">Showing {reviews.length} reviews</div>
-      )}
+  return (
+    <div className="container mx-auto mt-6 p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/dashboard"
+            className="text-primary hover:text-primary/90 mr-4 flex items-center gap-2 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="text-sm font-medium">Back to Dashboard</span>
+          </Link>
+          <h1 className="text-2xl font-bold tracking-tight">Reviews</h1>
+        </div>
+        <Button asChild className="ml-auto">
+          <Link href="/dashboard/reviews/create">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            <span>New Review</span>
+          </Link>
+        </Button>
+      </div>
+
+      {renderContent()}
     </div>
   );
 };

@@ -159,6 +159,7 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
     averageRating: number;
     totalReviews: number;
   } | null>(null);
+
   const [loadingRating, setLoadingRating] = useState(true);
   const [errorRating, setErrorRating] = useState<string | null>(null);
 
@@ -168,9 +169,16 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
       setErrorRating(null);
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings/${user.id}`,
+          `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/technician-ratings/technician`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`,
+            },
+          },
         );
+
         if (!res.ok) throw new Error('Gagal fetch rating');
+
         const data = await res.json();
         setTechnicianRating({
           averageRating: data.averageRating,
@@ -178,13 +186,14 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
         });
       } catch (err: any) {
         setTechnicianRating(null);
-        setErrorRating(err instanceof Error ? err.message : 'Gagal fetch rating');
+        setErrorRating(err instanceof Error ? err.message : 'Failed to fetch rating');
       } finally {
         setLoadingRating(false);
       }
     };
-    if (user?.id) fetchRating();
-  }, [user?.id]);
+
+    fetchRating();
+  }, []);
 
   return (
     <motion.div
@@ -211,7 +220,6 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-muted-foreground text-sm font-medium">
@@ -225,7 +233,6 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-muted-foreground text-sm font-medium">
@@ -256,7 +263,6 @@ export function TechnicianDashboard({ user }: TechnicianDashboardProps) {
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-muted-foreground text-sm font-medium">
