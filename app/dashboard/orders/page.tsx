@@ -21,6 +21,8 @@ import {
   Search,
   ThumbsUp,
   XCircle,
+  Edit3,
+  X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -60,14 +62,21 @@ type OrderStatus =
 
 interface Order {
   id: string;
+  customerId: string;
   technicianId?: string | null;
   itemName: string;
   itemCondition: string;
   repairDetails: string;
   serviceDate: string;
-  status: 'PENDING' | 'WAITING_APPROVAL' | string;
+  status: OrderStatus;
+  paymentMethodId?: string | null;
+  couponId?: string | null;
+  estimatedCompletionTime?: string | null;
   estimatedPrice?: number | null;
   finalPrice?: number | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string | null;
 }
 
 export default function OrdersPage() {
@@ -118,7 +127,7 @@ export default function OrdersPage() {
           order.id.toLowerCase().includes(query) ||
           order.itemName.toLowerCase().includes(query) ||
           order.repairDetails.toLowerCase().includes(query) ||
-          (order.technician && order.technician.toLowerCase().includes(query)),
+          (order.technicianId && order.technicianId.toLowerCase().includes(query)),
       );
     }
 
@@ -142,6 +151,8 @@ export default function OrdersPage() {
         const payload = (await res.json()) as { orders: Order[]; count: number };
         setOrders(payload.orders);
         setFilteredOrders(payload.orders);
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
     } catch (err) {
       console.error('Failed to fetch orders:', err);
@@ -162,10 +173,12 @@ export default function OrdersPage() {
         const payload = (await res.json()) as { orders: Order[]; count: number };
         setOrders(payload.orders);
         setFilteredOrders(payload.orders);
+        toast.success('Orders refreshed', {
+          description: 'Your orders have been updated.',
+        });
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
-      toast.success('Orders refreshed', {
-        description: 'Your orders have been updated.',
-      });
     } catch (err) {
       console.error('Failed to refresh orders:', err);
       toast.error('Refresh failed', {
@@ -186,16 +199,24 @@ export default function OrdersPage() {
 
   const handleCancelOrder = async (orderId: string) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === orderId ? { ...order, status: 'CANCELLED' as OrderStatus } : order,
-        ),
-      );
-      toast.success('Order cancelled', {
-        description: 'Your order has been cancelled successfully.',
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { 
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        },
       });
+      
+      if (res.ok) {
+        setOrders((prev) => prev.filter((order) => order.id !== orderId));
+        toast.success('Order cancelled', {
+          description: 'Your order has been cancelled successfully.',
+        });
+      } else {
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
     } catch (err) {
+      console.error('Failed to cancel order:', err);
       toast.error('Cancel failed', {
         description: 'Could not cancel the order. Please try again.',
       });
@@ -268,6 +289,15 @@ export default function OrdersPage() {
       default:
         return <Clock className="h-4 w-4" />;
     }
+  };
+
+  const formatPrice = (price: number | null | undefined) => {
+    if (price === null || price === undefined) return null;
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(price);
   };
 
   const containerVariants = {
@@ -378,11 +408,20 @@ export default function OrdersPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="in-progress">In Progress</TabsTrigger>
-          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="waiting-approval" className="hidden sm:flex">
+            Waiting
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="hidden lg:flex">
+            Approved
+          </TabsTrigger>
+          <TabsTrigger value="in-progress">Progress</TabsTrigger>
+          <TabsTrigger value="completed">Done</TabsTrigger>
+          <TabsTrigger value="rejected" className="hidden lg:flex">
+            Rejected
+          </TabsTrigger>
           <TabsTrigger value="cancelled">Cancelled</TabsTrigger>
         </TabsList>
 
@@ -475,16 +514,22 @@ export default function OrdersPage() {
                             <Calendar className="h-4 w-4" />
                             <span>Service Date: {format(new Date(order.serviceDate), 'PPP')}</span>
                           </div>
-                          {order.technician && (
+                          {order.technicianId && (
                             <div className="text-muted-foreground flex items-center gap-2">
-                              <span>Technician: {order.technician}</span>
+                              <span>Technician ID: {order.technicianId}</span>
+                            </div>
+                          )}
+                          {order.estimatedCompletionTime && (
+                            <div className="text-muted-foreground flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span>Est. Completion: {order.estimatedCompletionTime}</span>
                             </div>
                           )}
                           <div className="font-medium">
                             {order.finalPrice
-                              ? `Final Price: $${order.finalPrice}`
+                              ? `Final Price: ${formatPrice(order.finalPrice)}`
                               : order.estimatedPrice
-                                ? `Est. Price: $${order.estimatedPrice}`
+                                ? `Est. Price: ${formatPrice(order.estimatedPrice)}`
                                 : 'Price pending'}
                           </div>
                         </div>
@@ -499,20 +544,31 @@ export default function OrdersPage() {
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              toast.info('Order details', {
-                                description: `Viewing details for order ${order.id}`,
-                              })
+                              router.push(`/dashboard/orders/${order.id}`)
                             }>
                             View Details
                           </Button>
                           {(order.status === 'PENDING' || order.status === 'WAITING_APPROVAL') && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => handleCancelOrder(order.id)}>
-                              Cancel
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  router.push(`/dashboard/orders/${order.id}/edit`)
+                                }
+                                className="gap-2 border-blue-200 text-blue-600 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 transition-colors">
+                                <Edit3 className="h-4 w-4" />
+                                Edit
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleCancelOrder(order.id)}
+                                className="gap-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300 transition-colors">
+                                <X className="h-4 w-4" />
+                                Cancel
+                              </Button>
+                            </>
                           )}
                           <Button
                             variant="ghost"
@@ -546,12 +602,22 @@ export default function OrdersPage() {
                                   <dl className="grid grid-cols-2 gap-1 text-sm">
                                     <dt className="text-muted-foreground">Order ID:</dt>
                                     <dd className="font-mono">{order.id}</dd>
+                                    <dt className="text-muted-foreground">Customer ID:</dt>
+                                    <dd className="font-mono">{order.customerId}</dd>
                                     <dt className="text-muted-foreground">Created:</dt>
                                     <dd>{format(new Date(order.createdAt), 'PPP')}</dd>
+                                    <dt className="text-muted-foreground">Updated:</dt>
+                                    <dd>{format(new Date(order.updatedAt), 'PPP')}</dd>
                                     <dt className="text-muted-foreground">Service Date:</dt>
                                     <dd>{format(new Date(order.serviceDate), 'PPP')}</dd>
                                     <dt className="text-muted-foreground">Status:</dt>
                                     <dd>{getStatusBadge(order.status)}</dd>
+                                    {order.completedAt && (
+                                      <>
+                                        <dt className="text-muted-foreground">Completed:</dt>
+                                        <dd>{format(new Date(order.completedAt), 'PPP')}</dd>
+                                      </>
+                                    )}
                                   </dl>
                                 </div>
                                 <div>
@@ -562,13 +628,23 @@ export default function OrdersPage() {
                                       <p className="font-medium">{order.itemName}</p>
                                     </div>
                                     <div>
+                                      <span className="text-muted-foreground">Condition:</span>
+                                      <p>{order.itemCondition}</p>
+                                    </div>
+                                    <div>
                                       <span className="text-muted-foreground">Details:</span>
                                       <p>{order.repairDetails}</p>
                                     </div>
-                                    {order.technician && (
+                                    {order.technicianId && (
                                       <div>
-                                        <span className="text-muted-foreground">Technician:</span>
-                                        <p className="font-medium">{order.technician}</p>
+                                        <span className="text-muted-foreground">Technician ID:</span>
+                                        <p className="font-mono">{order.technicianId}</p>
+                                      </div>
+                                    )}
+                                    {order.estimatedCompletionTime && (
+                                      <div>
+                                        <span className="text-muted-foreground">Est. Completion:</span>
+                                        <p className="font-medium">{order.estimatedCompletionTime}</p>
                                       </div>
                                     )}
                                   </div>
@@ -576,7 +652,7 @@ export default function OrdersPage() {
                               </div>
 
                               <div className="mt-4 flex flex-wrap gap-2">
-                                {order.technician && (
+                                {order.technicianId && (
                                   <Button variant="outline" size="sm" className="gap-2">
                                     <MessageSquare className="h-4 w-4" />
                                     <span>Contact Technician</span>
