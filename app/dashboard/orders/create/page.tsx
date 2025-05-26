@@ -85,7 +85,7 @@ export default function CreateOrderPage() {
   const [isLoadingPayments, setIsLoadingPayments] = useState(true);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [isLoadingCoupons, setIsLoadingCoupons] = useState(true);
-  const [couponPreviews, setCouponPreviews] = useState<Record<string, string>>({});
+  const [couponPreviews, setCouponPreviews] = useState<Record<string, number>>({});
 
   const ORDER_BASE_PRICE = 200000;
 
@@ -326,6 +326,7 @@ export default function CreateOrderPage() {
         technicianId: formData.technicianId,
         paymentMethodId: formData.paymentMethodId,
         couponId: formData.couponId || null,
+        estimatedPrice: ORDER_BASE_PRICE,
       };
 
       const token = localStorage.getItem('token');
