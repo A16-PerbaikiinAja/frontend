@@ -425,7 +425,7 @@ export default function OrdersPage() {
         <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
-          <TabsTrigger value="waiting-approval" className="hidden sm:flex">Waiting=</TabsTrigger>
+          <TabsTrigger value="waiting-approval" className="hidden sm:flex">Waiting Approval</TabsTrigger>
           <TabsTrigger value="approved" className="hidden lg:flex">Approved</TabsTrigger>
           <TabsTrigger value="in-progress">Progress</TabsTrigger>
           <TabsTrigger value="completed">Done</TabsTrigger>
