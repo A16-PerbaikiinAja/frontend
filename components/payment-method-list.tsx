@@ -39,6 +39,7 @@ interface PaymentMethodAdminData {
   deleted_at: string | null;
 }
 
+
 // Fungsi placeholder untuk mendapatkan token JWT (GANTI DENGAN IMPLEMENTASI ASLI KAMU)
 const getAuthToken = (): string | null => {
   if (typeof window !== "undefined") {
@@ -76,7 +77,6 @@ export default function PaymentMethodList({ searchTerm = "", paymentType = "" }:
           headers: { "Authorization": `Bearer ${token}` }
         });
         const responseData = await response.json();
-
         if (response.ok && responseData.status === "success" && Array.isArray(responseData.data)) {
           setPaymentMethods(responseData.data as PaymentMethodAdminData[]);
         } else {
@@ -215,7 +215,7 @@ export default function PaymentMethodList({ searchTerm = "", paymentType = "" }:
               <TableHead>Tipe</TableHead>
               <TableHead className="hidden md:table-cell">Biaya Layanan (Rp)</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="hidden lg:table-cell">Dibuat Oleh</TableHead>
+              {/* <TableHead className="hidden lg:table-cell">Dibuat Oleh</TableHead> */}
               <TableHead className="hidden md:table-cell">Tanggal Dibuat</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
@@ -240,7 +240,7 @@ export default function PaymentMethodList({ searchTerm = "", paymentType = "" }:
                     {method.deleted_at === null ? "Aktif" : "Tidak Aktif"}
                   </Badge>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">{method.created_by_name || "-"}</TableCell>
+                {/* <TableCell className="hidden lg:table-cell">{method.created_by_name || "-"}</TableCell> */}
                 <TableCell className="hidden md:table-cell">{new Date(method.created_at).toLocaleDateString("id-ID", { year: 'numeric', month: 'short', day: 'numeric' })}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">

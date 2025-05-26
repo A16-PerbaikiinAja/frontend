@@ -25,6 +25,7 @@ jobs:
           NEXT_PUBLIC_AUTH_API_URL=${{ secrets.AUTH_API_URL }}
           NEXT_PUBLIC_ORDER_API_URL=${{ secrets.ORDER_API_URL }}
           NEXT_PUBLIC_REVIEW_API_URL=${{ secrets.REVIEW_API_URL }}
+          NEXT_PUBLIC_PAYMENT_API_URL=${{ secrets.PAYMENT_API_URL }}
           EOF
 
       - name: Install dependencies (for build)

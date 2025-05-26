@@ -39,7 +39,6 @@ export default function EditReviewPage() {
       setLoading(true);
       try {
         const apiUrl = `${process.env.NEXT_PUBLIC_REVIEW_API_URL}/review/${id}`;
-        console.log(apiUrl);
         const res = await fetch(apiUrl, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
@@ -49,7 +48,6 @@ export default function EditReviewPage() {
         const data = await res.json();
         setComment(data.comment);
         setRating(Number(data.rating) || 0);
-        console.log(res);
 
         setTechnician({
           id: data.technicianId,

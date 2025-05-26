@@ -189,7 +189,7 @@ export default function PaymentMethodForm({
         }
       )
 
-      router.push("/dashboard/payment-methods/active")
+      router.push("/dashboard/payment-methods/admin")
     } catch (error: any) {
       toast.error("Gagal menyimpan metode pembayaran", {
         description: error.message || "Terjadi kesalahan saat menyimpan data",
@@ -427,7 +427,7 @@ export default function PaymentMethodForm({
           </div>
         )}
 
-        <div className="flex items-center space-x-4">
+        {/* <div className="flex items-center space-x-4">
           <Controller
             name="isActive"
             control={form.control}
@@ -441,7 +441,7 @@ export default function PaymentMethodForm({
               </FormItem>
             )}
           />
-        </div>
+        </div> */}
 
         <Button type="submit" disabled={loading}>
           {isEditing ? "Simpan Perubahan" : "Tambah Metode Pembayaran"}
