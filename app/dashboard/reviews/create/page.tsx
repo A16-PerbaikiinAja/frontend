@@ -46,7 +46,8 @@ export default function CreateReviewPage() {
         const tList: Technician[] = data.map((t: any) => ({
           id: t.technicianId,
           name: t.fullName,
-          imageUrl: t.profilePhoto ||
+          imageUrl:
+            t.profilePhoto ||
             `https://ui-avatars.com/api/?name=${encodeURIComponent(t.fullName)}&background=random`,
           specialty: t.specialization || 'General Technician',
           rating: t.averageRating || 0,
@@ -117,20 +118,17 @@ export default function CreateReviewPage() {
 
   const StarRating = () => (
     <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map(star => (
+      {[1, 2, 3, 4, 5].map((star) => (
         <button
           type="button"
           aria-label={`Rate ${star} star`}
           key={star}
           disabled={submitting}
           className="focus:outline-none"
-          onClick={() => setRating(star)}
-        >
+          onClick={() => setRating(star)}>
           <Star
-            className={`w-7 h-7 transition ${
-              star <= rating
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'fill-gray-200 text-gray-200'
+            className={`h-7 w-7 transition ${
+              star <= rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'
             }`}
           />
         </button>
@@ -139,68 +137,66 @@ export default function CreateReviewPage() {
   );
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+    <div className="bg-background flex min-h-screen w-full flex-col items-center justify-center">
       <motion.div
         className="w-full max-w-2xl px-4 py-8 md:py-12"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
+        transition={{ duration: 0.4 }}>
         <div className="mb-8 flex items-center">
           <Link
             href="/dashboard/reviews"
-            className="text-primary hover:text-primary/90 mr-4 flex items-center gap-2 transition-colors"
-          >
+            className="text-primary hover:text-primary/90 mr-4 flex items-center gap-2 transition-colors">
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm font-medium">Back to Reviews</span>
           </Link>
         </div>
 
-        <Card className="rounded-lg border border-border bg-card shadow-sm">
-          <CardHeader className="text-center flex flex-col items-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
-                <Users2 className="h-6 w-6 text-primary" />
+        <Card className="border-border bg-card rounded-lg border shadow-sm">
+          <CardHeader className="flex flex-col items-center text-center">
+            <div className="bg-primary/10 mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+              <Users2 className="text-primary h-6 w-6" />
             </div>
             <CardTitle className="text-2xl font-bold">Review Form</CardTitle>
-            <p className="text-muted-foreground text-sm mt-2 max-w-md">
-                Leave a review for your technician!
+            <p className="text-muted-foreground mt-2 max-w-md text-sm">
+              Leave a review for your technician!
             </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <Label className="block mb-2 font-semibold">Pick Technician</Label>
+                <Label className="mb-2 block font-semibold">Pick Technician</Label>
                 {loadingTechs ? (
-                  <div className="text-sm text-muted-foreground">Loading...</div>
+                  <div className="text-muted-foreground text-sm">Loading...</div>
                 ) : technicians.length === 0 ? (
-                  <div className="text-red-600 text-sm">No technicians found.</div>
+                  <div className="text-sm text-red-600">No technicians found.</div>
                 ) : (
                   <div className="grid gap-3">
                     {technicians.map((tech) => (
                       <div
                         key={tech.id}
-                        className={`flex items-center gap-3 border rounded px-3 py-2 cursor-pointer transition relative
-                          ${technicianId === tech.id ? 'border-primary ring-1 ring-primary' : 'hover:border-muted-foreground/50'}
-                          ${submitting && 'opacity-40 pointer-events-none'}
-                        `}
+                        className={`relative flex cursor-pointer items-center gap-3 rounded border px-3 py-2 transition ${technicianId === tech.id ? 'border-primary ring-primary ring-1' : 'hover:border-muted-foreground/50'} ${submitting && 'pointer-events-none opacity-40'} `}
                         onClick={() => setTechnicianId(tech.id)}
                         tabIndex={0}
-                        aria-pressed={technicianId === tech.id}
-                      >
+                        aria-pressed={technicianId === tech.id}>
                         <Avatar className="h-12 w-12">
                           <AvatarImage src={tech.imageUrl} alt={tech.name} />
                           <AvatarFallback>{tech.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <div className="flex gap-2 items-center">
+                          <div className="flex items-center gap-2">
                             <span className="font-medium">{tech.name}</span>
-                            <span className="text-yellow-500 text-xs">★{tech.rating.toFixed(1)}</span>
-                            <span className="text-muted-foreground text-xs">({tech.totalReviews})</span>
+                            <span className="text-xs text-yellow-500">
+                              ★{tech.rating.toFixed(1)}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              ({tech.totalReviews})
+                            </span>
                           </div>
-                          <span className="text-xs text-muted-foreground">{tech.specialty}</span>
+                          <span className="text-muted-foreground text-xs">{tech.specialty}</span>
                         </div>
                         {technicianId === tech.id && (
-                          <span className="ml-2 text-primary text-lg font-bold">✓</span>
+                          <span className="text-primary ml-2 text-lg font-bold">✓</span>
                         )}
                       </div>
                     ))}
@@ -208,30 +204,27 @@ export default function CreateReviewPage() {
                 )}
               </div>
               <div>
-                <Label className="block mb-2 font-semibold">Rating</Label>
+                <Label className="mb-2 block font-semibold">Rating</Label>
                 <StarRating />
               </div>
               <div>
-                <Label className="block mb-2 font-semibold">Comment/Feedback</Label>
+                <Label className="mb-2 block font-semibold">Comment/Feedback</Label>
                 <Textarea
                   disabled={submitting}
                   value={comment}
-                  onChange={e => setComment(e.target.value)}
-                  className="w-full border rounded p-2 min-h-[80px]"
+                  onChange={(e) => setComment(e.target.value)}
+                  className="min-h-[80px] w-full rounded border p-2"
                   placeholder="Describe your experience…"
                   required
                 />
               </div>
-              {error && (
-                <div className="text-red-600 text-sm">{error}</div>
-              )}
+              {error && <div className="text-sm text-red-600">{error}</div>}
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="secondary"
                   onClick={() => router.back()}
-                  disabled={submitting}
-                >
+                  disabled={submitting}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={!technicianId || !rating || !comment || submitting}>
