@@ -38,6 +38,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Admin } from '@/types/auth';
+import type { Coupon } from '@/types/coupon';
 
 interface AdminDashboardProps {
   user: Admin;
@@ -80,8 +81,8 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     },
   ];
 
-  const [coupons, setCoupons] = useState([]);
-  const [loadingCoupons, setLoadingCoupons] = useState(true);
+
+  const [coupons, setCoupons] = useState<Coupon[]>([]);  const [loadingCoupons, setLoadingCoupons] = useState(true);
 
   useEffect(() => {
     const fetchCoupons = async () => {
@@ -158,7 +159,7 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     totalTechnicians: technicians.length,
     activeTechnicians: technicians.filter((t) => t.status === 'active').length,
     totalCoupons: coupons.length,
-    activeCoupons: coupons.filter((c) => c.status === 'active').length,
+    activeCoupons: coupons.filter((c) =>new Date(c.end_date) > new Date()).length,
   };
 
   const fadeInUp = {
