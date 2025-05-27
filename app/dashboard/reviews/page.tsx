@@ -230,10 +230,12 @@ const ReviewsPage: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight">Reviews</h1>
         </div>
         <Button asChild className="ml-auto">
-          <Link href="/dashboard/reviews/create">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            <span>New Review</span>
-          </Link>
+          {user?.role === 'USER' && (
+            <Link href="/dashboard/reviews/create">
+              <PlusCircle className="mr-2 h-4 w-4" />
+              <span>New Review</span>
+            </Link>
+          )}
         </Button>
       </div>
 
