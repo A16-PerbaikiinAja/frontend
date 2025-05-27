@@ -420,7 +420,28 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                               <Button variant="ghost" size="icon">
                                 <Settings className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive"
+                                onClick={async () => {
+                                  const confirmed = confirm(`Are you sure you want to delete coupon ${coupon.code}?`)
+                                  if (!confirmed) return
+                                  try {
+                                    const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/coupons/${coupon.id}`, {
+                                      method: 'DELETE',
+                                      headers: {
+                                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                                      },
+                                    })
+                                    if (!res.ok) throw new Error('Failed to delete')
+                                    setCoupons(prev => prev.filter(c => c.id !== coupon.id))
+                                  } catch (err) {
+                                    console.error(err)
+                                    alert('Failed to delete coupon')
+                                  }
+                                }}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
