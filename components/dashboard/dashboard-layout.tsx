@@ -10,7 +10,6 @@ import {
   Home,
   LogOut,
   Menu,
-  Settings,
   Star,
   Tag,
   PenToolIcon as Tool,
@@ -18,6 +17,7 @@ import {
   Users,
   Wrench,
   X,
+  TrendingUp,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -72,8 +72,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/dashboard/orders', label: 'My Orders', icon: Tool },
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
-    { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
+    { href: '/dashboard/reviews', label: 'Manage Reviews', icon: Star },
+    { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
+    { href: '/dashboard/payment-methods/active', label: 'Payment Methods', icon: CreditCard }
   ];
 
   const technicianNavItems = [
@@ -90,9 +92,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/technicians', label: 'Technicians', icon: Users },
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reports', label: 'Reports', icon: Star },
-    { href: '/dashboard/reviews', label: 'Manage Reviews', icon: Star },
-    { href: '/dashboard/payments', label: 'Payment Methods', icon: CreditCard },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+    { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
+    { href: '/dashboard/payment-methods/admin', label: 'Payment Methods', icon: CreditCard },
+    { href: '/dashboard/payment-methods/admin/details-with-counts', label: 'Statistik Pembayaran', icon: TrendingUp },
   ];
 
   const navItems =
@@ -319,9 +321,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">Settings</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>

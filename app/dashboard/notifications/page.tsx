@@ -58,7 +58,6 @@ export default function NotificationsPage() {
         setNotifications(data);
       }
     } catch (err) {
-      console.error('Failed to fetch notifications:', err);
       setError('Failed to load notifications. Please try again later.');
     } finally {
       setIsLoading(false);
@@ -94,7 +93,6 @@ export default function NotificationsPage() {
       setNotifications((prev) => prev.filter((notification) => notification.id !== id));
       toast.success('The notification has been removed.');
     } catch (err) {
-      console.error('Failed to delete notification:', err);
       toast.error('Could not delete the notification. Please try again.');
     } finally {
       setDeletingIds((prev) => prev.filter((deletingId) => deletingId !== id));
