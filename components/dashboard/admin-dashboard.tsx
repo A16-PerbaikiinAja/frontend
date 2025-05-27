@@ -14,7 +14,7 @@ import {
   Users,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -80,35 +80,25 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
     },
   ];
 
-  const coupons = [
-    {
-      id: 'COUPON-1',
-      code: 'REPAIR20',
-      discount: '20%',
-      validUntil: '2023-06-30',
-      maxUses: 100,
-      usedCount: 45,
-      status: 'active',
-    },
-    {
-      id: 'COUPON-2',
-      code: 'WELCOME10',
-      discount: '10%',
-      validUntil: '2023-12-31',
-      maxUses: 500,
-      usedCount: 123,
-      status: 'active',
-    },
-    {
-      id: 'COUPON-3',
-      code: 'SUMMER25',
-      discount: '25%',
-      validUntil: '2023-08-31',
-      maxUses: 200,
-      usedCount: 0,
-      status: 'inactive',
-    },
-  ];
+  const [coupons, setCoupons] = useState([]);
+  const [loadingCoupons, setLoadingCoupons] = useState(true);
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_ORDER_API_URL}/coupons`);
+        const data = await res.json();
+        setCoupons(data.coupons);
+      } catch (e) {
+        console.error('Failed to fetch coupons');
+      } finally {
+        setLoadingCoupons(false);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
+
 
   const reports = [
     {
@@ -376,9 +366,11 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                 <Input placeholder="Search coupons..." className="pl-8" />
                 <Search className="text-muted-foreground absolute top-2.5 left-2.5 h-4 w-4" />
               </div>
-              <Button className="gap-2">
-                <Plus className="h-4 w-4" />
-                <span>Create Coupon</span>
+              <Button asChild className="gap-2">
+                <Link href="/dashboard/coupons/create">
+                  <Plus className="h-4 w-4" />
+                  <span>Create Coupon</span>
+                </Link>
               </Button>
             </div>
 
@@ -389,43 +381,56 @@ export function AdminDashboard({ user }: AdminDashboardProps) {
                     <TableHead>Code</TableHead>
                     <TableHead>Discount</TableHead>
                     <TableHead>Valid Until</TableHead>
-                    <TableHead className="text-center">Usage</TableHead>
+                    <TableHead className="text-center">Max Usage</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {coupons.map((coupon) => (
-                    <TableRow key={coupon.id}>
-                      <TableCell>
-                        <div>
-                          <p className="font-mono font-medium">{coupon.code}</p>
-                          <p className="text-muted-foreground text-xs">{coupon.id}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>{coupon.discount}</TableCell>
-                      <TableCell>{coupon.validUntil}</TableCell>
-                      <TableCell className="text-center">
-                        {coupon.usedCount} / {coupon.maxUses}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={coupon.status === 'active' ? 'default' : 'secondary'}>
-                          {coupon.status === 'active' ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon">
-                            <Settings className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+                  {loadingCoupons ? (
+                    <TableRow>
+                      <TableCell colSpan={6}>Loading...</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    coupons.map((coupon) => {
+                      const isValid =
+                        new Date(coupon.end_date) > new Date();
+
+                      return (
+                        <TableRow key={coupon.id}>
+                          <TableCell>
+                            <p className="font-mono font-medium">{coupon.code}</p>
+                          </TableCell>
+                          <TableCell>
+                            {coupon.couponType === 'PERCENTAGE'
+                              ? `${coupon.discount_amount}%`
+                              : `Rp${coupon.discount_amount.toLocaleString()}`}
+                          </TableCell>
+                          <TableCell>{new Date(coupon.end_date).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-center">
+                            {coupon.max_usage}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Badge variant={isValid ? 'default' : 'secondary'}>
+                              {isValid ? 'Valid' : 'Expired'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="icon">
+                                <Settings className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
+
               </Table>
             </div>
             <div className="flex justify-center">
