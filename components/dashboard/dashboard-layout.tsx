@@ -72,7 +72,7 @@ export function  DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard', label: 'Dashboard', icon: Home },
     { href: '/dashboard/orders', label: 'My Orders', icon: Tool },
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
-    { href: '/dashboard/reviews', label: 'Manage Reviews', icon: Star },
+    { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
     { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
     { href: '/dashboard/profile', label: 'Profile', icon: User },
     { href: '/dashboard/payment-methods/active', label: 'Payment Methods', icon: CreditCard }
@@ -92,7 +92,7 @@ export function  DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/dashboard/technicians', label: 'Technicians', icon: Users },
     { href: '/dashboard/coupons', label: 'Coupons', icon: Tag },
     { href: '/dashboard/reports', label: 'Reports', icon: Star },
-    { href: '/dashboard/reviews', label: 'Reviews', icon: Star },
+    { href: '/dashboard/reviews', label: 'Manage Reviews', icon: Star },
     { href: '/dashboard/payment-methods/admin', label: 'Payment Methods', icon: CreditCard },
     { href: '/dashboard/payment-methods/admin/details-with-counts', label: 'Statistik Pembayaran', icon: TrendingUp },
   ];
